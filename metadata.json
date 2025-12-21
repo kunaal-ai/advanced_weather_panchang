@@ -1,0 +1,7 @@
+{
+  "name": "Weather & Panchang",
+  "description": "A sophisticated weather dashboard featuring real-time atmospheric data combined with traditional Vedic Panchang insights, presented in a stunning glassmorphic interface.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}

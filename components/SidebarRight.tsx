@@ -67,21 +67,6 @@ export const SidebarRight: React.FC<SidebarRightProps> = ({ panchang }) => {
                 </div>
               </div>
             </div>
-
-            <div className="bg-black/20 border border-white/5 rounded-xl p-3.5 flex items-center gap-4 hover:bg-white/5 transition-colors group">
-              <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-400 group-hover:text-purple-300 transition-colors">
-                <span className="material-symbols-outlined text-xl">stars</span>
-              </div>
-              <div className="flex-1">
-                <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-0.5">Nakshatra</p>
-                <div className="flex justify-between items-end w-full">
-                  <p className="text-white text-sm font-semibold">{panchang.nakshatra}</p>
-                  <span className="text-[10px] text-white/40 font-medium bg-white/5 px-1.5 py-0.5 rounded">
-                    {panchang.nakshatraEnd}
-                  </span>
-                </div>
-              </div>
-            </div>
           </div>
 
           {/* Detailed Rashifal Carousel */}

@@ -9,7 +9,13 @@ export const getGeminiWeatherInsight = async (condition: string): Promise<Weathe
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: `Generate a relevant short Sanskrit weather-related quote and its English meaning for the weather condition: "${condition}".`,
+      contents: `Generate a short motivational quote from the Bhagavad Gita (in English only) that is relevant to the overall mood or atmosphere for the weather condition: "${condition}". 
+      
+      RULES:
+      1. DO NOT include any Sanskrit. 
+      2. The quote MUST be less than 20 words.
+      3. Use the "quote" field for the text of the quote.
+      4. Use the "meaning" field for the Chapter and Verse reference (e.g., "Bhagavad Gita 2.47").`,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -24,7 +30,10 @@ export const getGeminiWeatherInsight = async (condition: string): Promise<Weathe
     });
     return response.text ? JSON.parse(response.text.trim()) : { quote: "", meaning: "" };
   } catch (error) {
-    return { quote: "Adityaat Jaayate Vrishtihi", meaning: "From the Sun comes rain." };
+    return { 
+      quote: "A person can rise through the efforts of their own mind.", 
+      meaning: "Bhagavad Gita 6.5" 
+    };
   }
 };
 
@@ -65,11 +74,13 @@ const processGeminiResponse = (response: any): SearchResult | null => {
 
 const GENERATE_WEATHER_PROMPT = (query: string) => `
   Get the real-time weather and Vedic Panchang for "${query}".
-  Include the "Detailed Daily Rashifal" (Horoscope) for the 12 zodiac signs (Mesh, Vrishabh, Mithun, Kark, Simha, Kanya, Tula, Vrishchik, Dhanu, Makar, Kumbh, Meena).
-  For each sign, provide:
-  1. A detailed 3-sentence prediction covering career, health, and personal life.
-  2. A "Lucky Number" (1-9).
-  3. A "Lucky Color".
+  Include the "Detailed Daily Rashifal" (Horoscope) for the 12 zodiac signs.
+  
+  For the "insight" section:
+  1. Provide a short motivational quote from the Bhagavad Gita in English only.
+  2. NO SANSKRIT.
+  3. The quote MUST be less than 20 words.
+  4. "quote" is the text, "meaning" is the Chapter and Verse reference.
 
   Provide the data in a STRICT valid JSON format inside a code block.
   JSON structure:
@@ -80,14 +91,12 @@ const GENERATE_WEATHER_PROMPT = (query: string) => `
     "panchang": { 
       "tithi": "string", 
       "paksha": "string", 
-      "nakshatra": "string", 
-      "nakshatraEnd": "string", 
       "sunrise": "string", 
       "sunset": "string", 
       "upcomingFestival": "string",
       "rashifal": [ { "sign": "string", "prediction": "string", "luckyNumber": "string", "luckyColor": "string" } ]
     },
-    "insight": { "quote": "Sanskrit-quote", "meaning": "English-meaning" }
+    "insight": { "quote": "English-only Gita quote", "meaning": "Chapter & Verse" }
   }
   Use Material Symbol icon names (e.g., 'sunny', 'rainy', 'cloud', 'thunderstorm').
 `;

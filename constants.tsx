@@ -72,8 +72,6 @@ export const MOCK_HOURLY: HourlyForecast[] = [
 export const MOCK_PANCHANG: PanchangData = {
   tithi: "Ekadashi",
   paksha: "Shukla Paksha",
-  nakshatra: "Shatabhisha",
-  nakshatraEnd: "upto 12:45 AM",
   sunrise: "06:34 AM",
   sunset: "06:12 PM",
   upcomingFestival: "Papmochani Ekadashi",
@@ -81,6 +79,6 @@ export const MOCK_PANCHANG: PanchangData = {
 };
 
 export const INITIAL_INSIGHT: WeatherInsight = {
-  quote: "Adityaat Jaayate Vrishtihi, Vrishtehe Annam Tatah Prajaah",
-  meaning: "From the Sun comes rain, from rain comes food, and from food come living beings."
+  quote: "You have a right to perform your prescribed duties, but you are not entitled to the fruits of your actions.",
+  meaning: "Bhagavad Gita 2.47"
 };

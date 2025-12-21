@@ -39,8 +39,6 @@ export interface HourlyForecast {
 export interface PanchangData {
   tithi: string;
   paksha: string;
-  nakshatra: string;
-  nakshatraEnd: string;
   sunrise: string;
   sunset: string;
   upcomingFestival: string;

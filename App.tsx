@@ -21,6 +21,7 @@ const App: React.FC = () => {
   const [insight, setInsight] = useState<WeatherInsight>(INITIAL_INSIGHT);
   const [isLoading, setIsLoading] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -41,6 +42,13 @@ const App: React.FC = () => {
     };
     fetchData();
 
+    // Handle PWA Install Prompt
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
     const timer = setInterval(() => {
       const now = new Date();
       setWeather(prev => ({
@@ -48,8 +56,21 @@ const App: React.FC = () => {
         time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       }));
     }, 60000);
-    return () => clearInterval(timer);
+    
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
   }, []);
+
+  const handleInstallApp = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setDeferredPrompt(null);
+    }
+  };
 
   const handleSearch = async (city: string) => {
     setIsSearching(true);
@@ -124,6 +145,8 @@ const App: React.FC = () => {
               onSearch={handleSearch} 
               onGeolocation={handleGeolocation}
               isSearching={isSearching}
+              canInstall={!!deferredPrompt}
+              onInstall={handleInstallApp}
             />
             <WeatherHero weather={weather} hourly={hourly} />
             <SidebarRight panchang={panchang} />

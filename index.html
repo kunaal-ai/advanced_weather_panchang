@@ -3,7 +3,11 @@
 <html lang="en" class="dark">
 <head>
     <meta charset="utf-8"/>
-    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+    <meta name="theme-color" content="#101622">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.json">
     <title>Aether Weather & Panchang</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;300;400;500;600;700&display=swap" rel="stylesheet"/>
@@ -21,11 +25,26 @@
                     fontFamily: {
                         "display": ["Inter", "sans-serif"]
                     },
+                    animation: {
+                        'bounce-subtle': 'bounceSubtle 3s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        bounceSubtle: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-5px)' },
+                        }
+                    }
                 },
             },
         }
     </script>
     <style>
+        :root {
+            --sat: env(safe-area-inset-top);
+            --sar: env(safe-area-inset-right);
+            --sab: env(safe-area-inset-bottom);
+            --sal: env(safe-area-inset-left);
+        }
         .glass-panel {
             background: rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(24px);
@@ -53,7 +72,28 @@
         .animate-float {
             animation: float 6s ease-in-out infinite;
         }
+        body {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            touch-action: none;
+            padding: var(--sat) var(--sar) var(--sab) var(--sal);
+        }
+        #root {
+            width: 100%;
+            height: 100%;
+            overflow-y: auto;
+            touch-action: pan-y;
+        }
     </style>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW registration failed:', err));
+        });
+      }
+    </script>
 <script type="importmap">
 {
   "imports": {
@@ -65,7 +105,7 @@
 }
 </script>
 </head>
-<body class="bg-background-dark font-display text-white overflow-x-hidden selection:bg-primary/30">
+<body class="bg-background-dark font-display text-white selection:bg-primary/30">
     <div id="root"></div>
 </body>
 </html>

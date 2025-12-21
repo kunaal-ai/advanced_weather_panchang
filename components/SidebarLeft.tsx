@@ -9,6 +9,8 @@ interface SidebarLeftProps {
   onSearch: (city: string) => void;
   onGeolocation: () => void;
   isSearching: boolean;
+  canInstall?: boolean;
+  onInstall?: () => void;
 }
 
 export const SidebarLeft: React.FC<SidebarLeftProps> = ({ 
@@ -17,7 +19,9 @@ export const SidebarLeft: React.FC<SidebarLeftProps> = ({
   insight, 
   onSearch, 
   onGeolocation, 
-  isSearching 
+  isSearching,
+  canInstall,
+  onInstall
 }) => {
   const [searchValue, setSearchValue] = useState('');
 
@@ -67,6 +71,23 @@ export const SidebarLeft: React.FC<SidebarLeftProps> = ({
           </span>
         </button>
       </div>
+
+      {/* Play Store Readiness Install Button */}
+      {canInstall && (
+        <button 
+          onClick={onInstall}
+          className="w-full bg-gradient-to-r from-primary to-blue-600 p-4 rounded-2xl flex items-center justify-between shadow-xl animate-bounce-subtle hover:brightness-110 transition-all group"
+        >
+          <div className="flex items-center gap-3">
+            <span className="material-symbols-outlined text-white">download_for_offline</span>
+            <div className="text-left">
+              <p className="text-white font-bold text-xs uppercase tracking-tighter">Install Native App</p>
+              <p className="text-white/70 text-[10px]">Faster access & offline support</p>
+            </div>
+          </div>
+          <span className="material-symbols-outlined text-white/40 group-hover:text-white">chevron_right</span>
+        </button>
+      )}
 
       {/* Location Badge */}
       <div className="flex items-center gap-2 px-4 py-2 glass-panel rounded-xl self-start">

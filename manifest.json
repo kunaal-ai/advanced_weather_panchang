@@ -1,0 +1,27 @@
+
+{
+  "name": "Aether Weather & Panchang",
+  "short_name": "Aether",
+  "description": "High-performance atmospheric and Vedic insights dashboard.",
+  "start_url": ".",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#101622",
+  "theme_color": "#101622",
+  "categories": ["weather", "lifestyle", "education"],
+  "icons": [
+    {
+      "src": "https://lh3.googleusercontent.com/aida-public/AB6AXuAYuSUsiv3b3YXKjnKr-H_aaJd29W7yCKpIqfDTC7QkHU8_YtFqYOZDWLt-C6CsXlAJ6jn1357L-CuTCfvp-8dv4X0YxusF0je1YfEeQYrvJXzC-ucED_bzWL2M1BZP7UswxMQ3YejPCJ3x1wpvhDHWeEvE_3wakZRXkEYC2os8tlHaLnSAYxauiwp68isu3zZYwDAzpkZy_zPGAbhWUbJmKA7opy_QLm54g7o5Z3iuxylA12p6xfVxbEKJDF_DIr26LTv5IRScww",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "View Rashifal",
+      "url": "/?view=rashifal",
+      "icons": [{ "src": "https://lh3.googleusercontent.com/aida-public/AB6AXuAYuSUsiv3b3YXKjnKr-H_aaJd29W7yCKpIqfDTC7QkHU8_YtFqYOZDWLt-C6CsXlAJ6jn1357L-CuTCfvp-8dv4X0YxusF0je1YfEeQYrvJXzC-ucED_bzWL2M1BZP7UswxMQ3YejPCJ3x1wpvhDHWeEvE_3wakZRXkEYC2os8tlHaLnSAYxauiwp68isu3zZYwDAzpkZy_zPGAbhWUbJmKA7opy_QLm54g7o5Z3iuxylA12p6xfVxbEKJDF_DIr26LTv5IRScww", "sizes": "512x512" }]
+    }
+  ]
+}

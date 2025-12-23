@@ -3,10 +3,19 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 
-console.log("Aether: Initializing React mount...");
+/**
+ * Aether Entry Point
+ * Orchestrates the mounting of the React tree.
+ */
+const mount = () => {
+  console.log("Aether: System components identified. Mounting...");
+  const container = document.getElementById('root');
+  
+  if (!container) {
+    console.error("Aether: Critical failure. Root display buffer not found.");
+    return;
+  }
 
-const container = document.getElementById('root');
-if (container) {
   try {
     const root = createRoot(container);
     root.render(
@@ -14,13 +23,18 @@ if (container) {
         <App />
       </React.StrictMode>
     );
-    console.log("Aether: Mount successful.");
-  } catch (error) {
-    console.error("Aether: Render error:", error);
+    console.log("Aether: Dashboard live.");
+  } catch (err) {
+    console.error("Aether: Dashboard failed to stabilize.", err);
     if (window.onerror) {
-       window.onerror(error.message, 'index.tsx', 0, 0, error);
+      window.onerror(err.message, 'index.tsx', 0, 0, err);
     }
   }
+};
+
+// Initiate mount sequence
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', mount);
 } else {
-  console.error("Aether: Critical failure - #root container not found.");
+  mount();
 }

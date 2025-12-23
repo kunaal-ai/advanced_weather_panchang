@@ -1,4 +1,6 @@
 
+export type ThemeType = 'classic' | 'eink' | 'daylight' | 'vedic';
+
 export interface GroundingSource {
   title: string;
   uri: string;
@@ -11,10 +13,17 @@ export interface Rashifal {
   luckyColor: string;
 }
 
+export interface VedicEvent {
+  date: string;
+  name: string;
+  type: 'Festival' | 'Purnima' | 'Amavasya' | 'Ekadashi' | 'Auspicious' | 'Other';
+}
+
 export interface WeatherData {
   temp: number;
   condition: string;
   feelsLike: number;
+  wind: string;
   location: string;
   icon: string;
   date: string;
@@ -41,7 +50,7 @@ export interface PanchangData {
   paksha: string;
   sunrise: string;
   sunset: string;
-  upcomingFestival: string;
+  upcomingEvents: VedicEvent[];
   rashifal?: Rashifal[];
 }
 

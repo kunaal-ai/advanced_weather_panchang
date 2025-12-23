@@ -1,12 +1,13 @@
 
-import { WeatherData, ForecastDay, HourlyForecast, PanchangData, WeatherInsight, Rashifal } from './types';
+import { WeatherData, ForecastDay, HourlyForecast, PanchangData, WeatherInsight, Rashifal, VedicEvent } from './types';
 
 export const INITIAL_WEATHER: WeatherData = {
   temp: 72,
   condition: "Heavy Rain",
   feelsLike: 68,
+  wind: "12 mph",
   location: "San Francisco",
-  icon: "https://lh3.googleusercontent.com/aida-public/AB6AXuAYuSUsiv3b3YXKjnKr-H_aaJd29W7yCKpIqfDTC7QkHU8_YtFqYOZDWLt-C6CsXlAJ6jn1357L-CuTCfvp-8dv4X0YxusF0je1YfEeQYrvJXzC-ucED_bzWL2M1BZP7UswxMQ3YejPCJ3x1wpvhDHWeEvE_3wakZRXkEYC2os8tlHaLnSAYxauiwp68isu3zZYwDAzpkZy_zPGAbhWUbJmKA7opy_QLm54g7o5Z3iuxylA12p6xfVxbEKJDF_DIr26LTv5IRScww",
+  icon: "rainy",
   date: "Monday, 14 Oct",
   time: "10:23 AM"
 };
@@ -69,12 +70,25 @@ export const MOCK_HOURLY: HourlyForecast[] = [
   { time: "3 PM", icon: "sunny", temp: 75 },
 ];
 
+const MOCK_EVENTS: VedicEvent[] = [
+  { date: "Oct 14", name: "Papmochani Ekadashi", type: "Ekadashi" },
+  { date: "Oct 15", name: "Auspicious Marriage Muhurat", type: "Auspicious" },
+  { date: "Oct 17", name: "Pradosh Vrat", type: "Auspicious" },
+  { date: "Oct 20", name: "Sharad Purnima", type: "Purnima" },
+  { date: "Oct 24", name: "Karwa Chauth", type: "Festival" },
+  { date: "Oct 27", name: "Rama Ekadashi", type: "Ekadashi" },
+  { date: "Oct 29", name: "Dhanteras", type: "Festival" },
+  { date: "Oct 31", name: "Deepawali", type: "Festival" },
+  { date: "Nov 02", name: "Govardhan Puja", type: "Festival" },
+  { date: "Nov 03", name: "Bhai Dooj", type: "Festival" },
+];
+
 export const MOCK_PANCHANG: PanchangData = {
   tithi: "Ekadashi",
   paksha: "Shukla Paksha",
   sunrise: "06:34 AM",
   sunset: "06:12 PM",
-  upcomingFestival: "Papmochani Ekadashi",
+  upcomingEvents: MOCK_EVENTS,
   rashifal: MOCK_RASHIFAL
 };
 

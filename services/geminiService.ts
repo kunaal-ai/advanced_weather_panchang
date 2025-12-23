@@ -63,7 +63,7 @@ const processGeminiResponse = (response: any): SearchResult | null => {
         date: now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' }),
         time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         sources,
-        icon: "https://lh3.googleusercontent.com/aida-public/AB6AXuAYuSUsiv3b3YXKjnKr-H_aaJd29W7yCKpIqfDTC7QkHU8_YtFqYOZDWLt-C6CsXlAJ6jn1357L-CuTCfvp-8dv4X0YxusF0je1YfEeQYrvJXzC-ucED_bzWL2M1BZP7UswxMQ3YejPCJ3x1wpvhDHWeEvE_3wakZRXkEYC2os8tlHaLnSAYxauiwp68isu3zZYwDAzpkZy_zPGAbhWUbJmKA7opy_QLm54g7o5Z3iuxylA12p6xfVxbEKJDF_DIr26LTv5IRScww"
+        icon: rawData.weather.icon || "cloudy"
       }
     };
   } catch (e) {
@@ -73,8 +73,11 @@ const processGeminiResponse = (response: any): SearchResult | null => {
 };
 
 const GENERATE_WEATHER_PROMPT = (query: string) => `
-  Get the real-time weather and Vedic Panchang for "${query}".
-  Include the "Detailed Daily Rashifal" (Horoscope) for the 12 zodiac signs.
+  Get the real-time weather and detailed Vedic Panchang for "${query}".
+  
+  IMPORTANT: 
+  1. ALL temperature values MUST be in FAHRENHEIT.
+  2. For the "panchang" section, provide "upcomingEvents" as a list of festivals, Purnimas, Amavasyas, Ekadashis, and auspicious days for the NEXT 15 DAYS starting from today.
   
   For the "insight" section:
   1. Provide a short motivational quote from the Bhagavad Gita in English only.
@@ -85,7 +88,14 @@ const GENERATE_WEATHER_PROMPT = (query: string) => `
   Provide the data in a STRICT valid JSON format inside a code block.
   JSON structure:
   {
-    "weather": { "temp": number, "condition": "string", "feelsLike": number, "location": "string", "icon": "material-icon-name" },
+    "weather": { 
+      "temp": number, 
+      "condition": "string", 
+      "feelsLike": number, 
+      "wind": "string (e.g. 10 mph)",
+      "location": "string", 
+      "icon": "material-icon-name" 
+    },
     "forecast": [ { "day": "short-day", "icon": "material-icon-name", "high": number, "low": number, "condition": "string" } ],
     "hourly": [ { "time": "string", "icon": "material-icon-name", "temp": number } ],
     "panchang": { 
@@ -93,12 +103,12 @@ const GENERATE_WEATHER_PROMPT = (query: string) => `
       "paksha": "string", 
       "sunrise": "string", 
       "sunset": "string", 
-      "upcomingFestival": "string",
+      "upcomingEvents": [ { "date": "string (e.g. Oct 14)", "name": "string", "type": "Festival | Purnima | Amavasya | Ekadashi | Auspicious | Other" } ],
       "rashifal": [ { "sign": "string", "prediction": "string", "luckyNumber": "string", "luckyColor": "string" } ]
     },
     "insight": { "quote": "English-only Gita quote", "meaning": "Chapter & Verse" }
   }
-  Use Material Symbol icon names (e.g., 'sunny', 'rainy', 'cloud', 'thunderstorm').
+  Use Material Symbol icon names (e.g., 'sunny', 'rainy', 'cloud', 'thunderstorm', 'cloudy', 'mist', 'wind', 'snow').
 `;
 
 export const searchWeatherForCity = async (city: string): Promise<SearchResult | null> => {

@@ -28,6 +28,14 @@ const App: React.FC = () => {
   const [searchStatus, setSearchStatus] = useState('');
 
   useEffect(() => {
+    // 1. Forced Safety Timeout: Ensure loader disappears regardless of init results
+    const emergencyTimer = setTimeout(() => {
+      if (isLoading) {
+        console.warn("Aether: Normal initialization timed out. Forcing UI active.");
+        setIsLoading(false);
+      }
+    }, 2000);
+
     const init = async () => {
       try {
         const now = new Date();
@@ -37,19 +45,21 @@ const App: React.FC = () => {
           date: now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })
         }));
         
-        // Non-blocking insight fetch
+        // Fetch real insight, but don't block app launch
         getGeminiWeatherInsight(INITIAL_WEATHER.condition)
           .then(res => setInsight(res))
-          .catch(e => console.error("Insight fetch failed", e));
+          .catch(e => console.error("Aether: Insight fetch background error", e));
           
       } catch (err) {
-        console.error("Initialization error:", err);
+        console.error("Aether: Initialization logic failed", err);
       } finally {
-        // Force loader off after short delay to ensure assets are ready
-        setTimeout(() => setIsLoading(false), 500);
+        setIsLoading(false);
+        clearTimeout(emergencyTimer);
       }
     };
+    
     init();
+    return () => clearTimeout(emergencyTimer);
   }, []);
 
   useEffect(() => {
@@ -131,10 +141,21 @@ const App: React.FC = () => {
     });
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-[#101622]">
+        <div className="flex flex-col items-center gap-6 glass-panel p-12 rounded-[2.5rem]">
+          <div className="size-10 border-2 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+          <p className="text-[var(--text-muted)] text-[10px] font-black tracking-[0.5em] uppercase animate-pulse">Stabilizing Core</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`relative min-h-screen w-full flex flex-col items-center theme-${theme} overflow-x-hidden`}>
       {/* Search Processing Overlay */}
-      {isSearching && !isLoading && (
+      {isSearching && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/40 backdrop-blur-md animate-in fade-in duration-300">
           <div className="glass-panel p-10 rounded-[3rem] flex flex-col items-center gap-6 shadow-2xl border border-white/10">
             <div className="relative">
@@ -166,40 +187,29 @@ const App: React.FC = () => {
       </div>
 
       <main className="relative z-20 w-full max-w-[1600px] px-4 py-4 md:px-6 md:py-6 lg:px-10 lg:h-screen lg:max-h-[1200px] flex flex-col lg:grid lg:grid-cols-12 gap-6 items-stretch overflow-y-auto lg:overflow-hidden">
-        {isLoading ? (
-          <div className="col-span-12 flex items-center justify-center min-h-[60vh]">
-            <div className="flex flex-col items-center gap-6 glass-panel p-12 rounded-[2.5rem]">
-              <div className="size-10 border-2 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-              <p className="text-muted text-[10px] font-black tracking-[0.5em] uppercase">Stabilizing Core</p>
-            </div>
-          </div>
-        ) : (
-          <>
-            <div className="order-2 lg:order-1 lg:col-span-3 xl:col-span-3 flex flex-col gap-6 min-h-0">
-              <SidebarLeft 
-                weather={displayWeather} 
-                forecast={displayForecast} 
-                insight={insight} 
-                onSearch={handleSearch} 
-                onGeolocation={handleGeolocation}
-                isSearching={isSearching}
-                unit={unit}
-                onOpenSettings={() => setIsSettingsOpen(true)}
-              />
-            </div>
-            <div className="order-1 lg:order-2 lg:col-span-5 xl:col-span-5 flex flex-col min-h-0 h-auto lg:h-auto">
-              <WeatherHero 
-                weather={displayWeather} 
-                hourly={displayHourly} 
-                unit={unit}
-                onToggleUnit={() => setUnit(u => u === 'F' ? 'C' : 'F')}
-              />
-            </div>
-            <div className="order-3 lg:order-3 lg:col-span-4 xl:col-span-4 flex flex-col gap-6 min-h-0 pb-10 lg:pb-0">
-              <SidebarRight panchang={panchang} />
-            </div>
-          </>
-        )}
+        <div className="order-2 lg:order-1 lg:col-span-3 xl:col-span-3 flex flex-col gap-6 min-h-0">
+          <SidebarLeft 
+            weather={displayWeather} 
+            forecast={displayForecast} 
+            insight={insight} 
+            onSearch={handleSearch} 
+            onGeolocation={handleGeolocation}
+            isSearching={isSearching}
+            unit={unit}
+            onOpenSettings={() => setIsSettingsOpen(true)}
+          />
+        </div>
+        <div className="order-1 lg:order-2 lg:col-span-5 xl:col-span-5 flex flex-col min-h-0 h-auto lg:h-auto">
+          <WeatherHero 
+            weather={displayWeather} 
+            hourly={displayHourly} 
+            unit={unit}
+            onToggleUnit={() => setUnit(u => u === 'F' ? 'C' : 'F')}
+          />
+        </div>
+        <div className="order-3 lg:order-3 lg:col-span-4 xl:col-span-4 flex flex-col gap-6 min-h-0 pb-10 lg:pb-0">
+          <SidebarRight panchang={panchang} />
+        </div>
       </main>
 
       {isSettingsOpen && (

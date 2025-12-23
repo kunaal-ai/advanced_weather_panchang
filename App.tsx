@@ -1,17 +1,17 @@
 
 import React, { useState, useEffect } from 'react';
-import { SidebarLeft } from './components/SidebarLeft';
-import { WeatherHero } from './components/WeatherHero';
-import { SidebarRight } from './components/SidebarRight';
+import { SidebarLeft } from './components/SidebarLeft.tsx';
+import { WeatherHero } from './components/WeatherHero.tsx';
+import { SidebarRight } from './components/SidebarRight.tsx';
 import { 
   INITIAL_WEATHER, 
   MOCK_FORECAST, 
   MOCK_HOURLY, 
   MOCK_PANCHANG, 
   INITIAL_INSIGHT 
-} from './constants';
-import { WeatherData, ForecastDay, HourlyForecast, PanchangData, WeatherInsight } from './types';
-import { getGeminiWeatherInsight, searchWeatherForCity, searchWeatherByCoords } from './services/geminiService';
+} from './constants.tsx';
+import { WeatherData, ForecastDay, HourlyForecast, PanchangData, WeatherInsight } from './types.ts';
+import { getGeminiWeatherInsight, searchWeatherForCity, searchWeatherByCoords } from './services/geminiService.ts';
 
 const App: React.FC = () => {
   const [weather, setWeather] = useState<WeatherData>(INITIAL_WEATHER);
@@ -118,22 +118,30 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="relative min-h-screen w-screen overflow-x-hidden flex items-center justify-center p-4 lg:p-8">
+    <div className="relative min-h-screen w-screen overflow-x-hidden flex items-center justify-center p-4 lg:p-10 transition-colors duration-1000">
       <div className="fixed inset-0 z-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-950/80 via-[#101622]/95 to-[#101622] z-10"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-950/90 via-[#101622]/98 to-[#101622] z-10 backdrop-blur-[2px]"></div>
         <img 
           alt="Atmospheric Background" 
-          className="w-full h-full object-cover" 
+          className="w-full h-full object-cover opacity-60 mix-blend-overlay" 
           src="https://images.unsplash.com/photo-1534088568595-a066f410bcda?q=80&w=2574&auto=format&fit=crop"
         />
+        <div className="absolute top-1/4 -left-20 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[150px] animate-pulse-slow"></div>
+        <div className="absolute bottom-1/4 -right-20 w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[130px] animate-pulse-slow" style={{ animationDelay: '2s' }}></div>
       </div>
 
-      <main className="relative z-20 flex flex-col lg:flex-row w-full h-full max-w-[1440px] mx-auto gap-6 lg:items-stretch lg:h-[calc(100vh-4rem)]">
+      <main className="relative z-20 flex flex-col lg:flex-row w-full h-full max-w-[1550px] mx-auto gap-8 lg:items-stretch lg:h-[calc(100vh-5rem)]">
         {isLoading ? (
           <div className="flex-1 flex items-center justify-center">
-            <div className="flex flex-col items-center gap-4">
-              <div className="size-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-              <p className="text-white/50 animate-pulse font-medium">Synchronizing Atmospheres...</p>
+            <div className="flex flex-col items-center gap-8 glass-panel p-16 rounded-[3rem] border-white/10">
+              <div className="relative">
+                <div className="size-20 border-[3px] border-primary/10 border-t-primary rounded-full animate-spin"></div>
+                <div className="absolute inset-0 size-20 border-[3px] border-transparent border-b-indigo-400 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '3s' }}></div>
+              </div>
+              <div className="flex flex-col items-center gap-2">
+                 <p className="text-white font-black text-xl tracking-[0.4em] uppercase text-glow">Synchronizing</p>
+                 <p className="text-white/30 text-[10px] font-bold tracking-[0.5em] uppercase animate-pulse">Aether Systems Active</p>
+              </div>
             </div>
           </div>
         ) : (
@@ -159,10 +167,11 @@ const App: React.FC = () => {
           const newInsight = await getGeminiWeatherInsight(weather.condition);
           setInsight(newInsight);
         }}
-        className="fixed bottom-6 right-6 z-30 size-12 bg-primary rounded-full flex items-center justify-center shadow-2xl hover:scale-110 transition-transform active:scale-95 group"
+        className="fixed bottom-10 right-10 z-30 size-14 bg-primary rounded-2xl flex items-center justify-center shadow-[0_20px_40px_rgba(19,91,236,0.4)] hover:scale-110 hover:rotate-3 transition-all active:scale-90 group border border-white/20 backdrop-blur-md overflow-hidden"
         title="Refresh AI Insight"
       >
-        <span className="material-symbols-outlined text-white text-xl group-hover:rotate-180 transition-transform duration-700">refresh</span>
+        <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+        <span className="material-symbols-outlined text-white text-2xl group-hover:rotate-180 transition-transform duration-1000">refresh</span>
       </button>
     </div>
   );

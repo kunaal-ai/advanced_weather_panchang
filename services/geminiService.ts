@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { WeatherInsight, SearchResult, GroundingSource } from "../types";
+import { WeatherInsight, SearchResult, GroundingSource } from "../types.ts";
 
 const aiInstance = () => new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
 

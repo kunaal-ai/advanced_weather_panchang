@@ -51,7 +51,6 @@
                         <span class="material-symbols-outlined" style="font-size: 48px; margin-bottom: 20px;">terminal</span>
                         <h1 style="font-size: 24px; margin-bottom: 10px; color: white;">Aether Boot Sequence Halted</h1>
                         <p style="opacity: 0.7; max-width: 600px; line-height: 1.6; background: #000; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 13px;">${msg}</p>
-                        <p style="font-size: 11px; opacity: 0.4; margin-top: 15px;">Location: ${url} @ ${lineNo}:${columnNo}</p>
                         <button onclick="window.location.reload(true)" style="margin-top: 30px; padding: 12px 24px; background: #135bec; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Retry Boot</button>
                     </div>
                 `;
@@ -124,10 +123,8 @@
             </p>
         </div>
     </div>
-    <!-- Use a direct esm.sh loader script that supports TypeScript and Import Maps better -->
-    <script type="module">
-        import "https://esm.sh/run@1.68.0";
-    </script>
-    <script type="module" src="./index.tsx"></script>
+    <!-- The 'esm.sh/run' script handles transpilation of TSX/TS directly. 
+         It must be the main script with 'data-main' pointing to your entry point. -->
+    <script type="module" src="https://esm.sh/run" data-main="./index.tsx"></script>
 </body>
 </html>

@@ -25,6 +25,7 @@ const App: React.FC = () => {
   const [unit, setUnit] = useState<'F' | 'C'>('F');
   const [theme, setTheme] = useState<ThemeType>('classic');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [searchStatus, setSearchStatus] = useState('');
 
   useEffect(() => {
     const init = async () => {
@@ -82,6 +83,7 @@ const App: React.FC = () => {
 
   const handleSearch = async (city: string) => {
     setIsSearching(true);
+    setSearchStatus(`Analyzing atmosphere in ${city}...`);
     const result = await searchWeatherForCity(city);
     if (result) {
       setWeather(result.weather);
@@ -91,11 +93,13 @@ const App: React.FC = () => {
       setInsight(result.insight);
     }
     setIsSearching(false);
+    setSearchStatus('');
   };
 
   const handleGeolocation = () => {
     if (!navigator.geolocation) return;
     setIsSearching(true);
+    setSearchStatus('Detecting local coordinates...');
     navigator.geolocation.getCurrentPosition(async (p) => {
       const res = await searchWeatherByCoords(p.coords.latitude, p.coords.longitude);
       if (res) {
@@ -106,11 +110,31 @@ const App: React.FC = () => {
         setInsight(res.insight);
       }
       setIsSearching(false);
-    }, () => setIsSearching(false));
+      setSearchStatus('');
+    }, () => {
+      setIsSearching(false);
+      setSearchStatus('');
+    });
   };
 
   return (
     <div className={`relative min-h-screen w-full flex flex-col items-center theme-${theme} overflow-x-hidden`}>
+      {/* Search Processing Overlay */}
+      {isSearching && !isLoading && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/40 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="glass-panel p-10 rounded-[3rem] flex flex-col items-center gap-6 shadow-2xl border border-white/10">
+            <div className="relative">
+              <div className="size-20 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+              <span className="material-symbols-outlined absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-primary text-3xl animate-pulse">cloud</span>
+            </div>
+            <div className="text-center">
+              <p className="text-sm font-black text-white uppercase tracking-[0.3em] animate-pulse">{searchStatus}</p>
+              <p className="text-[10px] text-white/50 uppercase tracking-[0.2em] mt-2 italic">Aether Synchronizing...</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
         {theme === 'classic' && (
            <img alt="BG" className="w-full h-full object-cover opacity-10" src="https://images.unsplash.com/photo-1534088568595-a066f410bcda?auto=format&fit=crop&w=2000" />
@@ -137,7 +161,7 @@ const App: React.FC = () => {
           </div>
         ) : (
           <>
-            {/* Sidebar Left: Search, Time, Quote, Weekly */}
+            {/* Sidebar Left */}
             <div className="order-2 lg:order-1 lg:col-span-3 xl:col-span-3 flex flex-col gap-6 min-h-0">
               <SidebarLeft 
                 weather={displayWeather} 
@@ -151,8 +175,8 @@ const App: React.FC = () => {
               />
             </div>
             
-            {/* Main Hero: Current Weather & Hourly */}
-            <div className="order-1 lg:order-2 lg:col-span-5 xl:col-span-5 flex flex-col min-h-0 h-[70vh] lg:h-auto">
+            {/* Main Hero */}
+            <div className="order-1 lg:order-2 lg:col-span-5 xl:col-span-5 flex flex-col min-h-0 h-auto lg:h-auto">
               <WeatherHero 
                 weather={displayWeather} 
                 hourly={displayHourly} 
@@ -161,8 +185,8 @@ const App: React.FC = () => {
               />
             </div>
 
-            {/* Sidebar Right: Panchang Events & Rashifal */}
-            <div className="order-3 lg:order-3 lg:col-span-4 xl:col-span-4 flex flex-col gap-6 min-h-0">
+            {/* Sidebar Right */}
+            <div className="order-3 lg:order-3 lg:col-span-4 xl:col-span-4 flex flex-col gap-6 min-h-0 pb-10 lg:pb-0">
               <SidebarRight panchang={panchang} />
             </div>
           </>

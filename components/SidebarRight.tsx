@@ -19,9 +19,9 @@ const getEventTypeColor = (type: VedicEvent['type']) => {
 
 export const SidebarRight: React.FC<SidebarRightProps> = ({ panchang }) => {
   return (
-    <div className="flex flex-col gap-6 h-full overflow-hidden">
+    <div className="flex flex-col gap-6 h-full lg:overflow-hidden">
       {/* Panchang Events Card */}
-      <div className="flex-[1.5] glass-panel rounded-[2.5rem] p-5 flex flex-col min-h-[400px] lg:min-h-0 relative overflow-hidden">
+      <div className="flex-[1.5] glass-panel rounded-[2.5rem] p-5 flex flex-col min-h-[450px] lg:min-h-0 relative overflow-hidden">
         {/* Top Info Strip */}
         <div className="flex items-center justify-between mb-4 relative z-10 shrink-0">
           <div className="flex items-center gap-2">
@@ -30,7 +30,6 @@ export const SidebarRight: React.FC<SidebarRightProps> = ({ panchang }) => {
             </div>
             <div>
               <p className="text-[10px] text-[var(--text-color)] font-bold tracking-tight uppercase leading-none">Lunar Phase</p>
-              <span className="text-[7px] text-[var(--text-muted)] font-black uppercase tracking-widest mt-0.5 block">Vedic Timeline</span>
             </div>
           </div>
           <div className="flex flex-col items-end">
@@ -82,7 +81,7 @@ export const SidebarRight: React.FC<SidebarRightProps> = ({ panchang }) => {
       </div>
 
       {/* Daily Rashifal Card */}
-      <div className="flex-1 glass-panel rounded-[2.5rem] p-6 flex flex-col min-h-[300px] lg:min-h-0 overflow-hidden relative">
+      <div className="flex-1 glass-panel rounded-[2.5rem] p-6 flex flex-col min-h-[400px] lg:min-h-0 overflow-hidden relative">
         <div className="flex items-center justify-between mb-5 relative z-10 shrink-0">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-primary/10 rounded-xl border border-primary/20">
@@ -90,10 +89,8 @@ export const SidebarRight: React.FC<SidebarRightProps> = ({ panchang }) => {
             </div>
             <div>
               <h3 className="text-[var(--text-color)] font-bold text-sm tracking-tight uppercase italic leading-none">Daily Rashifal</h3>
-              <span className="text-[9px] text-[var(--text-muted)] font-black uppercase tracking-widest mt-1 block">Zodiac Forecast</span>
             </div>
           </div>
-          <span className="text-[8px] text-primary/40 font-bold uppercase tracking-widest">12 Signs</span>
         </div>
 
         <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">

@@ -4,18 +4,60 @@ import { WeatherInsight, SearchResult, GroundingSource } from "../types";
 
 const aiInstance = () => new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
 
+/**
+ * Sanitizes hallucinated icon strings from the model to valid Material Symbols
+ */
+const sanitizeIcon = (icon: string): string => {
+  const map: Record<string, string> = {
+    'partly_sunimage': 'partly_cloudy_day',
+    'partly_sunny': 'partly_cloudy_day',
+    'heavy_rain_image': 'rainy',
+    'storm_icon': 'thunderstorm',
+    'clear_night_icon': 'bedtime',
+    'mostly_sunny': 'sunny',
+    'mostly_cloudy': 'cloud',
+    'scattered_showers': 'rainy_light',
+    'light_rain': 'rainy_light'
+  };
+  const normalized = icon.toLowerCase().trim();
+  return map[normalized] || normalized;
+};
+
+export const getCitySuggestions = async (query: string): Promise<string[]> => {
+  if (query.length < 2) return [];
+  const ai = aiInstance();
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: `Return a list of up to 5 real-world city names and their countries that match the search query: "${query}". 
+      Respond ONLY with a JSON array of strings, e.g., ["London, UK", "London, Ontario, Canada"].`,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: { type: Type.STRING }
+        },
+      },
+    });
+    return response.text ? JSON.parse(response.text.trim()) : [];
+  } catch (error) {
+    console.error("Suggestions Error:", error);
+    return [];
+  }
+};
+
 export const getGeminiWeatherInsight = async (condition: string): Promise<WeatherInsight> => {
   const ai = aiInstance();
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: `Generate a short motivational quote from the Bhagavad Gita (in English only) that is relevant to the overall mood or atmosphere for the weather condition: "${condition}". 
+      contents: `Generate a short motivational quote from the Bhagavad Gita (in English only) that is relevant to the weather condition: "${condition}". 
       
       RULES:
       1. DO NOT include any Sanskrit. 
       2. The quote MUST be less than 20 words.
-      3. Use the "quote" field for the text of the quote.
-      4. Use the "meaning" field for the Chapter and Verse reference (e.g., "Bhagavad Gita 2.47").`,
+      3. Use the "quote" field for the text.
+      4. Use the "meaning" field for the Chapter and Verse reference.`,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -56,6 +98,16 @@ const processGeminiResponse = (response: any): SearchResult | null => {
     }
 
     const now = new Date();
+    
+    // Sanitize icons in the whole response
+    if (rawData.weather) rawData.weather.icon = sanitizeIcon(rawData.weather.icon);
+    if (rawData.forecast) {
+      rawData.forecast = rawData.forecast.map((f: any) => ({ ...f, icon: sanitizeIcon(f.icon) }));
+    }
+    if (rawData.hourly) {
+      rawData.hourly = rawData.hourly.map((h: any) => ({ ...h, icon: sanitizeIcon(h.icon) }));
+    }
+
     return {
       ...rawData,
       weather: {
@@ -73,42 +125,31 @@ const processGeminiResponse = (response: any): SearchResult | null => {
 };
 
 const GENERATE_WEATHER_PROMPT = (query: string) => `
-  Get the real-time weather and detailed Vedic Panchang for "${query}".
+  TASK: Fetch REAL-TIME weather and Vedic Panchang for "${query}".
   
-  IMPORTANT: 
-  1. ALL temperature values MUST be in FAHRENHEIT.
-  2. For the "panchang" section, provide "upcomingEvents" as a list of festivals, Purnimas, Amavasyas, Ekadashis, and auspicious days for the NEXT 15 DAYS starting from today.
+  URGENT DATA ACCURACY RULES:
+  1. USE GOOGLE SEARCH to find the exact current temperature (Fahrenheit) for "${query}" right now. 
+  2. PRIORITIZE the search result over your internal knowledge. If search says 41F, use 41F. Do not estimate.
+  3. ICON WHITELIST: You MUST only use these Material Symbol names for icons: 
+     'sunny', 'partly_cloudy_day', 'cloud', 'cloudy', 'rainy', 'thunderstorm', 'snow', 'mist', 'fog', 'wind', 'bedtime'.
+     DO NOT invent strings like 'PARTLY_sunimage'.
   
-  For the "insight" section:
-  1. Provide a short motivational quote from the Bhagavad Gita in English only.
-  2. NO SANSKRIT.
-  3. The quote MUST be less than 20 words.
-  4. "quote" is the text, "meaning" is the Chapter and Verse reference.
+  DATA STRUCTURE:
+  - "upcomingEvents": Next 15 days of festivals/Tithis.
+  - "insight": Short English Gita quote (<20 words, no Sanskrit).
 
-  Provide the data in a STRICT valid JSON format inside a code block.
-  JSON structure:
+  Return ONLY valid JSON:
   {
-    "weather": { 
-      "temp": number, 
-      "condition": "string", 
-      "feelsLike": number, 
-      "wind": "string (e.g. 10 mph)",
-      "location": "string", 
-      "icon": "material-icon-name" 
-    },
-    "forecast": [ { "day": "short-day", "icon": "material-icon-name", "high": number, "low": number, "condition": "string" } ],
-    "hourly": [ { "time": "string", "icon": "material-icon-name", "temp": number } ],
+    "weather": { "temp": number, "condition": "string", "feelsLike": number, "wind": "string", "location": "string", "icon": "string" },
+    "forecast": [ { "day": "string", "icon": "string", "high": number, "low": number, "condition": "string" } ],
+    "hourly": [ { "time": "string", "icon": "string", "temp": number } ],
     "panchang": { 
-      "tithi": "string", 
-      "paksha": "string", 
-      "sunrise": "string", 
-      "sunset": "string", 
-      "upcomingEvents": [ { "date": "string (e.g. Oct 14)", "name": "string", "type": "Festival | Purnima | Amavasya | Ekadashi | Auspicious | Other" } ],
+      "tithi": "string", "paksha": "string", "sunrise": "string", "sunset": "string",
+      "upcomingEvents": [ { "date": "Oct 14", "name": "string", "type": "Festival | Purnima | Amavasya | Ekadashi | Auspicious | Other" } ],
       "rashifal": [ { "sign": "string", "prediction": "string", "luckyNumber": "string", "luckyColor": "string" } ]
     },
-    "insight": { "quote": "English-only Gita quote", "meaning": "Chapter & Verse" }
+    "insight": { "quote": "string", "meaning": "Bhagavad Gita X.Y" }
   }
-  Use Material Symbol icon names (e.g., 'sunny', 'rainy', 'cloud', 'thunderstorm', 'cloudy', 'mist', 'wind', 'snow').
 `;
 
 export const searchWeatherForCity = async (city: string): Promise<SearchResult | null> => {
@@ -133,7 +174,7 @@ export const searchWeatherByCoords = async (lat: number, lon: number): Promise<S
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: GENERATE_WEATHER_PROMPT(`coordinates ${lat}, ${lon}`),
+      contents: GENERATE_WEATHER_PROMPT(`current weather for coordinates ${lat}, ${lon}`),
       config: {
         tools: [{ googleSearch: {} }],
       },

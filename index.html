@@ -12,7 +12,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700" rel="stylesheet"/>
     
     <script>
-        window.process = { env: { API_KEY: "" } };
+        window.process = window.process || { env: {} };
+        if (!window.process.env) window.process.env = {};
+        
         window.tailwind.config = {
             darkMode: 'class',
             theme: {
@@ -28,13 +30,13 @@
         };
 
         window.onerror = function(msg) {
-            console.error("Aether Error:", msg);
+            console.error("Aether Critical:", msg);
             const root = document.getElementById('root');
             if (root && (root.innerHTML.includes('loader-ring') || root.innerHTML === "")) {
-                root.innerHTML = `<div style="height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#101622; color:white; font-family:sans-serif;">
-                    <h2 style="font-weight:700;">System Offline</h2>
-                    <p style="opacity:0.5; font-size:12px; margin-top:8px;">${msg}</p>
-                    <button onclick="location.reload()" style="margin-top:20px; padding:10px 20px; background:#135bec; border:none; color:white; border-radius:8px; cursor:pointer;">Retry</button>
+                root.innerHTML = `<div style="height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#101622; color:white; font-family:sans-serif; text-align:center; padding:20px;">
+                    <h2 style="font-weight:700; font-size: 24px;">System Offline</h2>
+                    <p style="opacity:0.6; font-size:12px; margin-top:12px; max-width: 300px;">${msg}</p>
+                    <button onclick="location.reload()" style="margin-top:30px; padding:12px 24px; background:#135bec; border:none; color:white; border-radius:12px; cursor:pointer; font-weight: 800; font-size: 10px; letter-spacing: 2px; text-transform: uppercase;">Reconnect</button>
                 </div>`;
             }
         };
@@ -78,13 +80,13 @@
         }
 
         .theme-vedic {
-            --color-primary: #FF9933; /* Saffron */
-            --color-bg: #FFFBF2; /* Warm Parchment */
-            --color-accent: #D84315; /* Vermillion */
+            --color-primary: #FF9933;
+            --color-bg: #FFFBF2;
+            --color-accent: #D84315;
             --glass-bg: rgba(255, 255, 255, 0.85);
             --glass-border: rgba(216, 67, 21, 0.15);
-            --text-color: #3E2723; /* Deep Earthy Brown */
-            --text-muted: #5d4037; /* More visible Brown for labels */
+            --text-color: #3E2723;
+            --text-muted: #5d4037;
             --card-bg: rgba(255, 153, 51, 0.08);
             --card-border: rgba(216, 67, 21, 0.12);
         }
@@ -130,7 +132,6 @@
         .text-glow { text-shadow: 0 0 20px rgba(255, 255, 255, 0.1); }
         .theme-eink .text-glow, .theme-daylight .text-glow, .theme-vedic .text-glow { text-shadow: none; }
 
-        /* Global scrollbar refinements */
         .custom-scrollbar::-webkit-scrollbar { width: 2px; height: 2px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 10px; opacity: 0.2; }

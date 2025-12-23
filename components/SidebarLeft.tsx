@@ -171,6 +171,29 @@ export const SidebarLeft: React.FC<SidebarLeftProps> = ({
           ))}
         </div>
       </div>
+
+      {/* Grounding Sources - MUST display as per Gemini SDK guidelines */}
+      {weather.sources && weather.sources.length > 0 && (
+        <div className="shrink-0 glass-panel rounded-2xl p-4 flex flex-col gap-2 border-t border-primary/20 bg-primary/5 overflow-hidden">
+          <h4 className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest flex items-center gap-1">
+            <span className="material-symbols-outlined text-[10px]">travel_explore</span> Sources
+          </h4>
+          <div className="flex flex-col gap-1.5">
+            {weather.sources.slice(0, 3).map((s, i) => (
+              <a 
+                key={i} 
+                href={s.uri} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-[9px] text-primary hover:underline truncate max-w-full font-bold flex items-center gap-1 opacity-80 hover:opacity-100 transition-opacity"
+              >
+                <span className="material-symbols-outlined text-[10px]">link</span>
+                {s.title}
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

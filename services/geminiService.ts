@@ -2,11 +2,16 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { WeatherInsight, SearchResult, GroundingSource } from "../types";
 
-const aiInstance = () => new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+// Always initialize with process.env.API_KEY as per guidelines.
+const aiInstance = () => {
+  const key = process.env.API_KEY;
+  if (!key) {
+    console.warn("Gemini API Key is missing. Using fallback/mock data.");
+    return null;
+  }
+  return new GoogleGenAI({ apiKey: key });
+};
 
-/**
- * Sanitizes hallucinated icon strings from the model to valid Material Symbols
- */
 const sanitizeIcon = (icon: string): string => {
   const map: Record<string, string> = {
     'partly_sunimage': 'partly_cloudy_day',
@@ -19,13 +24,14 @@ const sanitizeIcon = (icon: string): string => {
     'scattered_showers': 'rainy_light',
     'light_rain': 'rainy_light'
   };
-  const normalized = icon.toLowerCase().trim();
+  const normalized = (icon || '').toLowerCase().trim();
   return map[normalized] || normalized;
 };
 
 export const getCitySuggestions = async (query: string): Promise<string[]> => {
   if (query.length < 2) return [];
   const ai = aiInstance();
+  if (!ai) return [];
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
@@ -48,11 +54,11 @@ export const getCitySuggestions = async (query: string): Promise<string[]> => {
 
 export const getGeminiWeatherInsight = async (condition: string): Promise<WeatherInsight> => {
   const ai = aiInstance();
+  if (!ai) return { quote: "Perform your obligatory duty, for action is better than inaction.", meaning: "Bhagavad Gita 3.8" };
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: `Generate a short motivational quote from the Bhagavad Gita (in English only) that is relevant to the weather condition: "${condition}". 
-      
       RULES:
       1. DO NOT include any Sanskrit. 
       2. The quote MUST be less than 20 words.
@@ -70,7 +76,7 @@ export const getGeminiWeatherInsight = async (condition: string): Promise<Weathe
         },
       },
     });
-    return response.text ? JSON.parse(response.text.trim()) : { quote: "", meaning: "" };
+    return response.text ? JSON.parse(response.text.trim()) : { quote: "Perform your duty.", meaning: "Bhagavad Gita 3.8" };
   } catch (error) {
     return { 
       quote: "A person can rise through the efforts of their own mind.", 
@@ -86,7 +92,6 @@ const processGeminiResponse = (response: any): SearchResult | null => {
 
   try {
     const rawData = JSON.parse(jsonMatch[0]);
-    
     const sources: GroundingSource[] = [];
     const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
     if (chunks) {
@@ -98,8 +103,6 @@ const processGeminiResponse = (response: any): SearchResult | null => {
     }
 
     const now = new Date();
-    
-    // Sanitize icons in the whole response
     if (rawData.weather) rawData.weather.icon = sanitizeIcon(rawData.weather.icon);
     if (rawData.forecast) {
       rawData.forecast = rawData.forecast.map((f: any) => ({ ...f, icon: sanitizeIcon(f.icon) }));
@@ -115,7 +118,7 @@ const processGeminiResponse = (response: any): SearchResult | null => {
         date: now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' }),
         time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         sources,
-        icon: rawData.weather.icon || "cloudy"
+        icon: (rawData.weather && rawData.weather.icon) || "cloudy"
       }
     };
   } catch (e) {
@@ -126,18 +129,11 @@ const processGeminiResponse = (response: any): SearchResult | null => {
 
 const GENERATE_WEATHER_PROMPT = (query: string) => `
   TASK: Fetch REAL-TIME weather and Vedic Panchang for "${query}".
-  
   URGENT DATA ACCURACY RULES:
   1. USE GOOGLE SEARCH to find the exact current temperature (Fahrenheit) for "${query}" right now. 
-  2. PRIORITIZE the search result over your internal knowledge. If search says 41F, use 41F. Do not estimate.
-  3. ICON WHITELIST: You MUST only use these Material Symbol names for icons: 
-     'sunny', 'partly_cloudy_day', 'cloud', 'cloudy', 'rainy', 'thunderstorm', 'snow', 'mist', 'fog', 'wind', 'bedtime'.
-     DO NOT invent strings like 'PARTLY_sunimage'.
+  2. PRIORITIZE search results over internal knowledge.
+  3. ICON WHITELIST: 'sunny', 'partly_cloudy_day', 'cloud', 'cloudy', 'rainy', 'thunderstorm', 'snow', 'mist', 'fog', 'wind', 'bedtime'.
   
-  DATA STRUCTURE:
-  - "upcomingEvents": Next 15 days of festivals/Tithis.
-  - "insight": Short English Gita quote (<20 words, no Sanskrit).
-
   Return ONLY valid JSON:
   {
     "weather": { "temp": number, "condition": "string", "feelsLike": number, "wind": "string", "location": "string", "icon": "string" },
@@ -154,13 +150,12 @@ const GENERATE_WEATHER_PROMPT = (query: string) => `
 
 export const searchWeatherForCity = async (city: string): Promise<SearchResult | null> => {
   const ai = aiInstance();
+  if (!ai) return null;
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: GENERATE_WEATHER_PROMPT(city),
-      config: {
-        tools: [{ googleSearch: {} }],
-      },
+      config: { tools: [{ googleSearch: {} }] },
     });
     return processGeminiResponse(response);
   } catch (error) {
@@ -171,13 +166,12 @@ export const searchWeatherForCity = async (city: string): Promise<SearchResult |
 
 export const searchWeatherByCoords = async (lat: number, lon: number): Promise<SearchResult | null> => {
   const ai = aiInstance();
+  if (!ai) return null;
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: GENERATE_WEATHER_PROMPT(`current weather for coordinates ${lat}, ${lon}`),
-      config: {
-        tools: [{ googleSearch: {} }],
-      },
+      config: { tools: [{ googleSearch: {} }] },
     });
     return processGeminiResponse(response);
   } catch (error) {

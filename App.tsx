@@ -29,7 +29,6 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const init = async () => {
-      setIsLoading(true);
       try {
         const now = new Date();
         setWeather(prev => ({
@@ -37,12 +36,17 @@ const App: React.FC = () => {
           time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           date: now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })
         }));
-        const geminiInsight = await getGeminiWeatherInsight(INITIAL_WEATHER.condition);
-        setInsight(geminiInsight);
+        
+        // Non-blocking insight fetch
+        getGeminiWeatherInsight(INITIAL_WEATHER.condition)
+          .then(res => setInsight(res))
+          .catch(e => console.error("Insight fetch failed", e));
+          
       } catch (err) {
-        console.error(err);
+        console.error("Initialization error:", err);
       } finally {
-        setIsLoading(false);
+        // Force loader off after short delay to ensure assets are ready
+        setTimeout(() => setIsLoading(false), 500);
       }
     };
     init();
@@ -84,16 +88,21 @@ const App: React.FC = () => {
   const handleSearch = async (city: string) => {
     setIsSearching(true);
     setSearchStatus(`Analyzing atmosphere in ${city}...`);
-    const result = await searchWeatherForCity(city);
-    if (result) {
-      setWeather(result.weather);
-      setForecast(result.forecast);
-      setHourly(result.hourly);
-      setPanchang(result.panchang);
-      setInsight(result.insight);
+    try {
+      const result = await searchWeatherForCity(city);
+      if (result) {
+        setWeather(result.weather);
+        setForecast(result.forecast);
+        setHourly(result.hourly);
+        setPanchang(result.panchang);
+        setInsight(result.insight);
+      }
+    } catch (e) {
+      console.error("Search failed:", e);
+    } finally {
+      setIsSearching(false);
+      setSearchStatus('');
     }
-    setIsSearching(false);
-    setSearchStatus('');
   };
 
   const handleGeolocation = () => {
@@ -101,16 +110,21 @@ const App: React.FC = () => {
     setIsSearching(true);
     setSearchStatus('Detecting local coordinates...');
     navigator.geolocation.getCurrentPosition(async (p) => {
-      const res = await searchWeatherByCoords(p.coords.latitude, p.coords.longitude);
-      if (res) {
-        setWeather(res.weather);
-        setForecast(res.forecast);
-        setHourly(res.hourly);
-        setPanchang(res.panchang);
-        setInsight(res.insight);
+      try {
+        const res = await searchWeatherByCoords(p.coords.latitude, p.coords.longitude);
+        if (res) {
+          setWeather(res.weather);
+          setForecast(res.forecast);
+          setHourly(res.hourly);
+          setPanchang(res.panchang);
+          setInsight(res.insight);
+        }
+      } catch (e) {
+        console.error("Geo search failed:", e);
+      } finally {
+        setIsSearching(false);
+        setSearchStatus('');
       }
-      setIsSearching(false);
-      setSearchStatus('');
     }, () => {
       setIsSearching(false);
       setSearchStatus('');
@@ -156,12 +170,11 @@ const App: React.FC = () => {
           <div className="col-span-12 flex items-center justify-center min-h-[60vh]">
             <div className="flex flex-col items-center gap-6 glass-panel p-12 rounded-[2.5rem]">
               <div className="size-10 border-2 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-              <p className="text-muted text-[10px] font-black tracking-[0.5em] uppercase">Stabilizing</p>
+              <p className="text-muted text-[10px] font-black tracking-[0.5em] uppercase">Stabilizing Core</p>
             </div>
           </div>
         ) : (
           <>
-            {/* Sidebar Left */}
             <div className="order-2 lg:order-1 lg:col-span-3 xl:col-span-3 flex flex-col gap-6 min-h-0">
               <SidebarLeft 
                 weather={displayWeather} 
@@ -174,8 +187,6 @@ const App: React.FC = () => {
                 onOpenSettings={() => setIsSettingsOpen(true)}
               />
             </div>
-            
-            {/* Main Hero */}
             <div className="order-1 lg:order-2 lg:col-span-5 xl:col-span-5 flex flex-col min-h-0 h-auto lg:h-auto">
               <WeatherHero 
                 weather={displayWeather} 
@@ -184,8 +195,6 @@ const App: React.FC = () => {
                 onToggleUnit={() => setUnit(u => u === 'F' ? 'C' : 'F')}
               />
             </div>
-
-            {/* Sidebar Right */}
             <div className="order-3 lg:order-3 lg:col-span-4 xl:col-span-4 flex flex-col gap-6 min-h-0 pb-10 lg:pb-0">
               <SidebarRight panchang={panchang} />
             </div>

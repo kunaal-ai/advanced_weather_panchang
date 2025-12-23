@@ -3,23 +3,26 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 
-console.log("Aether: Initializing Core Systems...");
+console.log("Aether: Starting system mount sequence...");
 
 const container = document.getElementById('root');
 if (container) {
   try {
     const root = createRoot(container);
+    console.log("Aether: React root created. Dispatching App...");
     root.render(
       <React.StrictMode>
         <App />
       </React.StrictMode>
     );
-    console.log("Aether: Root render command issued.");
+    console.log("Aether: Initial render complete.");
   } catch (error) {
-    console.error("Aether: Critical failure during React mount.", error);
-    // Trigger global error handler to show UI overlay
-    window.dispatchEvent(new ErrorEvent('error', { error: error, message: error.message }));
+    console.error("Aether: Fatal crash during system initialization.", error);
+    // Trigger the global error handler defined in index.html
+    if (window.onerror) {
+      window.onerror(error.message, 'index.tsx', 0, 0, error);
+    }
   }
 } else {
-  console.error("Aether Error: System mount point #root not found in document.");
+  console.error("Aether: Hardware failure. Primary display buffer #root not found.");
 }

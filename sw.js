@@ -1,25 +1,23 @@
 
-const CACHE_NAME = 'aether-v3';
+const CACHE_NAME = 'aether-v4';
 const PRECACHE_ASSETS = [
-  './',
   './index.html',
   './manifest.json'
 ];
 
-// On install, cache the core UI
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      // Use individual add for better debugging of failed requests
       return Promise.allSettled(
         PRECACHE_ASSETS.map(url => cache.add(url))
-      );
+      ).then(() => {
+        console.log('Precache attempt finished');
+      });
     })
   );
   self.skipWaiting();
 });
 
-// Clean up old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => Promise.all(
@@ -30,9 +28,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Network-First Strategy
 self.addEventListener('fetch', (event) => {
-  // Ignore external API calls to avoid CORS cache issues
   if (!event.request.url.startsWith(self.location.origin)) {
     return;
   }

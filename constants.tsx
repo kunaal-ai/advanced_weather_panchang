@@ -1,5 +1,5 @@
 
-import { WeatherData, ForecastDay, HourlyForecast, PanchangData, WeatherInsight, Rashifal } from './types';
+import { WeatherData, ForecastDay, HourlyForecast, PanchangData, WeatherInsight, Rashifal } from './types.ts';
 
 export const INITIAL_WEATHER: WeatherData = {
   temp: 72,

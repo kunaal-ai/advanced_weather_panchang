@@ -121,7 +121,6 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          // Use relative path for registration
           navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW registration failed:', err));
         });
       }
@@ -141,7 +140,6 @@
 </head>
 <body class="bg-background-dark font-display text-white selection:bg-primary/30">
     <div id="root"></div>
-    <!-- No-build TSX/JSX loader with explicit main entry -->
     <script type="module" src="https://esm.sh/run" data-main="./index.tsx"></script>
 </body>
 </html>

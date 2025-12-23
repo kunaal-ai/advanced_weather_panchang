@@ -16,11 +16,10 @@ import { getGeminiWeatherInsight, searchWeatherForCity, searchWeatherByCoords } 
 
 const App: React.FC = () => {
   const [weather, setWeather] = useState<WeatherData>(INITIAL_WEATHER);
-  const [forecast, setForecast] = useState<ForecastDay[]>(MOCK_FORECAST);
-  const [hourly, setHourly] = useState<HourlyForecast[]>(MOCK_HOURLY);
+  const [forecast, setForecast] = useState<ForecastDay[]>(MOCK_FORECAST || []);
+  const [hourly, setHourly] = useState<HourlyForecast[]>(MOCK_HOURLY || []);
   const [panchang, setPanchang] = useState<PanchangData>(MOCK_PANCHANG);
   const [insight, setInsight] = useState<WeatherInsight>(INITIAL_INSIGHT);
-  const [isLoading, setIsLoading] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
   const [unit, setUnit] = useState<'F' | 'C'>('F');
   const [theme, setTheme] = useState<ThemeType>('classic');
@@ -28,38 +27,19 @@ const App: React.FC = () => {
   const [searchStatus, setSearchStatus] = useState('');
 
   useEffect(() => {
-    // 1. Forced Safety Timeout: Ensure loader disappears regardless of init results
-    const emergencyTimer = setTimeout(() => {
-      if (isLoading) {
-        console.warn("Aether: Normal initialization timed out. Forcing UI active.");
-        setIsLoading(false);
-      }
-    }, 2000);
-
-    const init = async () => {
-      try {
-        const now = new Date();
-        setWeather(prev => ({
-          ...prev,
-          time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          date: now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })
-        }));
-        
-        // Fetch real insight, but don't block app launch
-        getGeminiWeatherInsight(INITIAL_WEATHER.condition)
-          .then(res => setInsight(res))
-          .catch(e => console.error("Aether: Insight fetch background error", e));
-          
-      } catch (err) {
-        console.error("Aether: Initialization logic failed", err);
-      } finally {
-        setIsLoading(false);
-        clearTimeout(emergencyTimer);
-      }
-    };
+    const now = new Date();
+    setWeather(prev => ({
+      ...prev,
+      time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      date: now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })
+    }));
     
-    init();
-    return () => clearTimeout(emergencyTimer);
+    getGeminiWeatherInsight(INITIAL_WEATHER.condition)
+      .then(res => setInsight(res))
+      .catch(() => {});
+
+    const boot = document.getElementById('boot-screen');
+    if (boot) boot.remove();
   }, []);
 
   useEffect(() => {
@@ -73,9 +53,14 @@ const App: React.FC = () => {
     }
   }, [theme]);
 
-  const convertTemp = (temp: number) => {
-    if (unit === 'F') return Math.round(temp);
-    return Math.round((temp - 32) * 5 / 9);
+  /**
+   * More robust temperature conversion that handles numeric or string inputs.
+   */
+  const convertTemp = (temp: any) => {
+    let num = typeof temp === 'number' ? temp : parseFloat(temp);
+    if (isNaN(num)) return 0;
+    if (unit === 'F') return Math.round(num);
+    return Math.round((num - 32) * 5 / 9);
   };
 
   const displayWeather = useMemo(() => ({
@@ -84,31 +69,31 @@ const App: React.FC = () => {
     feelsLike: convertTemp(weather.feelsLike)
   }), [weather, unit]);
 
-  const displayForecast = useMemo(() => forecast.map(f => ({
+  const displayForecast = useMemo(() => (forecast || []).map(f => ({
     ...f,
     high: convertTemp(f.high),
     low: convertTemp(f.low)
   })), [forecast, unit]);
 
-  const displayHourly = useMemo(() => hourly.map(h => ({
+  const displayHourly = useMemo(() => (hourly || []).map(h => ({
     ...h,
     temp: convertTemp(h.temp)
   })), [hourly, unit]);
 
   const handleSearch = async (city: string) => {
     setIsSearching(true);
-    setSearchStatus(`Analyzing atmosphere in ${city}...`);
+    setSearchStatus(`Analyzing ${city}...`);
     try {
       const result = await searchWeatherForCity(city);
       if (result) {
         setWeather(result.weather);
-        setForecast(result.forecast);
-        setHourly(result.hourly);
-        setPanchang(result.panchang);
-        setInsight(result.insight);
+        setForecast(result.forecast || []);
+        setHourly(result.hourly || []);
+        setPanchang(result.panchang || MOCK_PANCHANG);
+        setInsight(result.insight || INITIAL_INSIGHT);
       }
     } catch (e) {
-      console.error("Search failed:", e);
+      console.error("Search error:", e);
     } finally {
       setIsSearching(false);
       setSearchStatus('');
@@ -118,19 +103,19 @@ const App: React.FC = () => {
   const handleGeolocation = () => {
     if (!navigator.geolocation) return;
     setIsSearching(true);
-    setSearchStatus('Detecting local coordinates...');
+    setSearchStatus('Syncing location...');
     navigator.geolocation.getCurrentPosition(async (p) => {
       try {
         const res = await searchWeatherByCoords(p.coords.latitude, p.coords.longitude);
         if (res) {
           setWeather(res.weather);
-          setForecast(res.forecast);
-          setHourly(res.hourly);
-          setPanchang(res.panchang);
-          setInsight(res.insight);
+          setForecast(res.forecast || []);
+          setHourly(res.hourly || []);
+          setPanchang(res.panchang || MOCK_PANCHANG);
+          setInsight(res.insight || INITIAL_INSIGHT);
         }
       } catch (e) {
-        console.error("Geo search failed:", e);
+        console.error("Geo error:", e);
       } finally {
         setIsSearching(false);
         setSearchStatus('');
@@ -141,31 +126,16 @@ const App: React.FC = () => {
     });
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center bg-[#101622]">
-        <div className="flex flex-col items-center gap-6 glass-panel p-12 rounded-[2.5rem]">
-          <div className="size-10 border-2 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-          <p className="text-[var(--text-muted)] text-[10px] font-black tracking-[0.5em] uppercase animate-pulse">Stabilizing Core</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className={`relative min-h-screen w-full flex flex-col items-center theme-${theme} overflow-x-hidden`}>
-      {/* Search Processing Overlay */}
       {isSearching && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/40 backdrop-blur-md animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
           <div className="glass-panel p-10 rounded-[3rem] flex flex-col items-center gap-6 shadow-2xl border border-white/10">
             <div className="relative">
               <div className="size-20 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
               <span className="material-symbols-outlined absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-primary text-3xl animate-pulse">cloud</span>
             </div>
-            <div className="text-center">
-              <p className="text-sm font-black text-white uppercase tracking-[0.3em] animate-pulse">{searchStatus}</p>
-              <p className="text-[10px] text-white/50 uppercase tracking-[0.2em] mt-2 italic">Aether Synchronizing...</p>
-            </div>
+            <p className="text-sm font-black text-white uppercase tracking-[0.3em] animate-pulse">{searchStatus}</p>
           </div>
         </div>
       )}
@@ -178,12 +148,8 @@ const App: React.FC = () => {
            <div className="w-full h-full bg-gradient-to-tr from-[#E0F7FA] via-[#81D4FA] to-[#4FC3F7] opacity-60"></div>
         )}
         {theme === 'vedic' && (
-           <>
-             <div className="w-full h-full vedic-pattern"></div>
-             <div className="absolute inset-0 bg-gradient-to-br from-[#FF9933]/10 to-transparent"></div>
-           </>
+           <div className="w-full h-full opacity-10 bg-[radial-gradient(#FF9933_0.5px,transparent_0.5px)] [background-size:24px_24px]"></div>
         )}
-        <div className={`absolute top-0 inset-x-0 h-96 bg-gradient-to-b ${theme === 'eink' ? 'from-transparent' : 'from-primary/5'} to-transparent`}></div>
       </div>
 
       <main className="relative z-20 w-full max-w-[1600px] px-4 py-4 md:px-6 md:py-6 lg:px-10 lg:h-screen lg:max-h-[1200px] flex flex-col lg:grid lg:grid-cols-12 gap-6 items-stretch overflow-y-auto lg:overflow-hidden">

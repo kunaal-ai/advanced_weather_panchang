@@ -29,16 +29,24 @@ export const SidebarLeft: React.FC<SidebarLeftProps> = ({
   const suggestionTimeout = useRef<number | null>(null);
 
   useEffect(() => {
-    if (val.trim().length > 2) {
+    const trimmed = val.trim();
+    if (trimmed.length > 2) {
       if (suggestionTimeout.current) clearTimeout(suggestionTimeout.current);
       suggestionTimeout.current = window.setTimeout(async () => {
         setIsSuggesting(true);
-        const results = await getCitySuggestions(val.trim());
-        setSuggestions(results);
-        setIsSuggesting(false);
-      }, 600);
+        try {
+          const results = await getCitySuggestions(trimmed);
+          setSuggestions(Array.isArray(results) ? results : []);
+        } catch (e) {
+          console.error("Suggestion Error", e);
+          setSuggestions([]);
+        } finally {
+          setIsSuggesting(false);
+        }
+      }, 500);
     } else {
       setSuggestions([]);
+      setIsSuggesting(false);
     }
     return () => { if (suggestionTimeout.current) clearTimeout(suggestionTimeout.current); };
   }, [val]);
@@ -58,17 +66,25 @@ export const SidebarLeft: React.FC<SidebarLeftProps> = ({
     setSuggestions([]);
   };
 
+  const formatCitation = (meaning: string) => {
+    if (!meaning) return "BHAGWAD GITA";
+    const parts = meaning.match(/(\d+)\D+(\d+)/);
+    if (parts) {
+      return `BHAGWAD GITA C${parts[1]}-V${parts[2]}`;
+    }
+    const singleNumber = meaning.match(/(\d+)/);
+    if (singleNumber && !meaning.includes('C')) {
+       return `BHAGWAD GITA ${meaning.toUpperCase()}`;
+    }
+    return meaning.toUpperCase().includes('GITA') ? meaning.toUpperCase() : `BHAGWAD GITA ${meaning.toUpperCase()}`;
+  };
+
   return (
     <div className="flex flex-col gap-5 h-full overflow-hidden">
       {/* Search Header */}
       <div className="relative shrink-0">
         <div className="flex gap-2">
           <form onSubmit={submit} className="flex-1 glass-panel rounded-2xl p-1.5 flex items-center group relative overflow-hidden">
-            {isSearching && (
-              <div className="absolute top-0 left-0 right-0 h-[2px] bg-primary/20 overflow-hidden">
-                <div className="h-full bg-primary animate-[shimmer_1.5s_infinite] w-1/3"></div>
-              </div>
-            )}
             <span className={`material-symbols-outlined text-primary ml-2 text-xl ${isSearching ? 'animate-spin' : ''}`}>
               {isSearching ? 'progress_activity' : 'search'}
             </span>
@@ -91,8 +107,8 @@ export const SidebarLeft: React.FC<SidebarLeftProps> = ({
           </button>
         </div>
 
-        {suggestions.length > 0 && !isSearching && (
-          <div className="absolute top-full left-0 right-14 mt-2 glass-panel rounded-2xl overflow-hidden shadow-2xl z-[100] border border-[var(--glass-border)] animate-in slide-in-from-top-2 duration-200">
+        {(suggestions?.length ?? 0) > 0 && !isSearching && (
+          <div className="absolute top-full left-0 right-0 mt-2 glass-panel rounded-2xl overflow-hidden shadow-2xl z-[100] border border-[var(--glass-border)] animate-in slide-in-from-top-2 duration-200">
             {suggestions.map((city, idx) => (
               <button
                 key={idx}
@@ -116,9 +132,9 @@ export const SidebarLeft: React.FC<SidebarLeftProps> = ({
              </p>
              <div className="flex items-baseline gap-2">
                <h1 className="text-4xl md:text-5xl font-light tracking-tighter text-[var(--text-color)] text-glow leading-none">
-                 {weather.time.split(' ')[0]}
+                 {weather.time?.split(' ')[0] ?? '--:--'}
                </h1>
-               <span className="text-xs font-black text-[var(--text-muted)] uppercase">{weather.time.split(' ')[1]}</span>
+               <span className="text-xs font-black text-[var(--text-muted)] uppercase">{weather.time?.split(' ')[1] ?? ''}</span>
              </div>
           </div>
           <div className="p-2 glass-card rounded-xl border-primary/10">
@@ -127,41 +143,42 @@ export const SidebarLeft: React.FC<SidebarLeftProps> = ({
         </div>
       </div>
 
-      {/* Gita Insight Card - Expanded (Reclaimed Space) */}
-      <div className="flex-1 glass-panel rounded-[2.5rem] p-6 relative overflow-hidden flex flex-col justify-center min-h-[160px] border-l-4 border-l-panchang-accent/40 shadow-xl group">
-        <div className="absolute -top-10 -right-10 size-32 bg-panchang-accent/5 rounded-full blur-3xl group-hover:bg-panchang-accent/10 transition-all duration-700"></div>
-        
-        <div className="relative z-10">
-          <div className="flex items-center gap-2 mb-4 opacity-60">
+      {/* Spiritual Essence Card - Optimized to fit text without scroll */}
+      <div className="flex-[2] glass-panel rounded-[2.5rem] p-6 md:p-8 relative overflow-hidden flex flex-col border-l-4 border-l-panchang-accent/40 shadow-xl transition-all duration-500">
+        <div className="relative z-10 flex flex-col h-full items-center">
+          <div className="w-full flex items-center gap-2 mb-4 opacity-60 shrink-0">
             <span className="material-symbols-outlined text-panchang-accent text-sm">auto_awesome</span>
-            <p className="text-[9px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)]">Spiritual Insight</p>
+            <p className="text-[9px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)]">Spiritual Essence</p>
           </div>
           
-          <p className="text-panchang-accent font-serif italic text-[18px] md:text-[20px] lg:text-[22px] leading-snug mb-4 drop-shadow-sm">
-            "{insight.quote}"
-          </p>
-          
-          <div className="flex items-center justify-between pt-4 border-t border-[var(--glass-border)]">
-            <p className="text-[var(--text-muted)] text-[9px] font-black uppercase tracking-widest">
-              {insight.meaning}
+          <div className="flex-1 flex flex-col items-center justify-center w-full px-2">
+            <p className="text-panchang-accent font-serif italic text-[15px] sm:text-[16px] md:text-[18px] lg:text-[19px] leading-relaxed text-center">
+              "{insight?.quote?.replace(/"/g, '') ?? 'Perform your prescribed duties, for action is better than inaction.'}"
             </p>
-            <span className="material-symbols-outlined text-panchang-accent/20 text-xl">menu_book</span>
+            
+            {/* Simple Line Divider */}
+            <div className="w-full flex items-center justify-center my-6 shrink-0">
+              <div className="h-[1px] w-1/4 bg-panchang-accent/10"></div>
+            </div>
+          </div>
+
+          <div className="w-full flex items-center justify-center pt-2 shrink-0">
+            <p className="text-[9px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)]">
+              {formatCitation(insight?.meaning)}
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Weekly Outlook - Compact */}
-      <div className="shrink-0 h-[280px] glass-panel rounded-[2rem] p-5 flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between mb-3 px-1">
-          <h3 className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em]">Weekly Outlook</h3>
-          <span className="text-[8px] text-primary/40 font-bold uppercase tracking-widest">7 Day Cycle</span>
-        </div>
+      {/* Weekly Outlook - Shrinked */}
+      <div className="shrink-0 h-[190px] glass-panel rounded-[2rem] p-5 flex flex-col overflow-hidden">
+        <h3 className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] mb-3 px-1 shrink-0">Weekly Outlook</h3>
         <div className="flex-1 overflow-y-auto pr-1 space-y-1.5 custom-scrollbar">
-          {forecast.map((item, idx) => (
-            <div key={idx} className="flex items-center justify-between p-2.5 glass-card rounded-xl hover:bg-primary/5 transition-all group">
-              <span className="text-[10px] text-[var(--text-muted)] font-bold w-10 uppercase group-hover:text-primary transition-colors">{item.day}</span>
-              <span className={`material-symbols-outlined text-lg ${item.icon.includes('sun') ? 'text-yellow-400' : 'text-blue-400'}`}>
-                {item.icon}
+          {(forecast || []).map((item, idx) => (
+            <div key={idx} className="flex items-center justify-between p-2.5 glass-card rounded-xl hover:bg-primary/5 transition-all">
+              <span className="text-[10px] text-[var(--text-muted)] font-bold w-10 uppercase">{item.day}</span>
+              <span className={`material-symbols-outlined text-lg ${(item.icon || '').includes('sun') ? 'text-yellow-400' : 'text-blue-400'}`}>
+                {item.icon || 'cloud'}
               </span>
               <div className="flex gap-3 text-[11px] w-14 justify-end tabular-nums font-bold">
                 <span className="text-[var(--text-color)]">{item.high}°</span>
@@ -171,29 +188,6 @@ export const SidebarLeft: React.FC<SidebarLeftProps> = ({
           ))}
         </div>
       </div>
-
-      {/* Grounding Sources - MUST display as per Gemini SDK guidelines */}
-      {weather.sources && weather.sources.length > 0 && (
-        <div className="shrink-0 glass-panel rounded-2xl p-4 flex flex-col gap-2 border-t border-primary/20 bg-primary/5 overflow-hidden">
-          <h4 className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest flex items-center gap-1">
-            <span className="material-symbols-outlined text-[10px]">travel_explore</span> Sources
-          </h4>
-          <div className="flex flex-col gap-1.5">
-            {weather.sources.slice(0, 3).map((s, i) => (
-              <a 
-                key={i} 
-                href={s.uri} 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="text-[9px] text-primary hover:underline truncate max-w-full font-bold flex items-center gap-1 opacity-80 hover:opacity-100 transition-opacity"
-              >
-                <span className="material-symbols-outlined text-[10px]">link</span>
-                {s.title}
-              </a>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 };

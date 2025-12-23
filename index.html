@@ -6,37 +6,66 @@
     <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
     <meta name="theme-color" content="#101622">
     <title>Aether Weather & Panchang</title>
+    
+    <!-- Dependencies -->
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700" rel="stylesheet"/>
+    
     <script>
         window.process = { env: { API_KEY: "" } };
+        
+        // Tailwind Theme Injection
+        window.tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#135bec",
+                        "background-dark": "#101622",
+                        "panchang-accent": "#ff9f43", 
+                    }
+                }
+            }
+        };
+
+        // System Diagnostic Handler
         window.onerror = function(msg, url, line, col, error) {
-            console.error("Aether Boot Error:", msg, "@", url, ":", line);
+            console.error("Aether Boot Sequence Halted:", msg);
             const root = document.getElementById('root');
-            if (root) {
-                root.innerHTML = `<div style="padding:40px;color:white;font-family:sans-serif;text-align:center;">
-                    <h2 style="color:#ff4d4d;">System Initialization Failed</h2>
-                    <p style="opacity:0.6;font-size:12px;">${msg}</p>
-                    <button onclick="location.reload()" style="margin-top:20px;padding:10px 20px;background:#135bec;border:none;color:white;border-radius:8px;">Retry</button>
-                </div>`;
+            if (root && (root.innerHTML.includes('loader-ring') || root.innerHTML === "")) {
+                root.innerHTML = `
+                    <div style="height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#101622; color:white; font-family:sans-serif; text-align:center; padding:20px;">
+                        <span class="material-symbols-outlined" style="font-size:48px; color:#ff4d4d; margin-bottom:16px;">terminal</span>
+                        <h2 style="margin:0 0 8px 0; font-weight:700; letter-spacing:-0.02em;">System Initialization Failed</h2>
+                        <p style="opacity:0.5; font-size:12px; max-width:320px; line-height:1.6; font-family:monospace;">${msg}</p>
+                        <button onclick="location.reload()" style="margin-top:24px; padding:12px 24px; background:#135bec; border:none; color:white; border-radius:12px; font-weight:bold; cursor:pointer; box-shadow: 0 10px 20px rgba(19,91,236,0.2);">Force System Restart</button>
+                        <p style="margin-top:20px; font-size:10px; opacity:0.3; text-transform:uppercase; letter-spacing:0.1em;">Check console for detailed telemetry</p>
+                    </div>
+                `;
             }
         };
     </script>
+    
     <style>
-        body { background: #101622; margin: 0; font-family: 'Inter', sans-serif; }
-        .boot-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: white; background: radial-gradient(circle at center, #135bec11 0%, #101622 100%); }
-        .spinner { width: 32px; height: 32px; border: 2px solid rgba(255,255,255,0.1); border-top-color: #135bec; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 24px; }
+        body { background: #101622; margin: 0; overflow: hidden; height: 100vh; width: 100vw; }
+        .boot-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: white; background: radial-gradient(circle at center, #135bec15 0%, #101622 100%); }
+        .loader-ring { width: 32px; height: 32px; border: 2px solid rgba(255,255,255,0.05); border-top-color: #135bec; border-radius: 50%; animation: spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite; margin-bottom: 24px; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .boot-text { font-size: 10px; letter-spacing: 0.5em; text-transform: uppercase; font-weight: 700; opacity: 0.3; }
+        .boot-label { font-size: 10px; letter-spacing: 0.6em; text-transform: uppercase; font-weight: 800; opacity: 0.3; }
     </style>
-<script type="importmap">
+
+    <!-- Explicit Import Map for better resolution -->
+    <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@^19.2.3",
+    "react": "https://esm.sh/react@19",
+    "react-dom": "https://esm.sh/react-dom@19",
+    "react-dom/client": "https://esm.sh/react-dom@19/client",
+    "react/jsx-runtime": "https://esm.sh/react@19/jsx-runtime",
+    "@google/genai": "https://esm.sh/@google/genai@1.34.0",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "@google/genai": "https://esm.sh/@google/genai@^1.34.0"
+    "react/": "https://esm.sh/react@^19.2.3/"
   }
 }
 </script>
@@ -44,11 +73,15 @@
 <body>
     <div id="root">
         <div class="boot-screen">
-            <div class="spinner"></div>
-            <div class="boot-text">Aether System Loading</div>
+            <div class="loader-ring"></div>
+            <div class="boot-label">Aether Synchronizing</div>
         </div>
     </div>
-    <!-- Load esm.sh/run which fetches index.tsx as text and transpiles it -->
+
+    <!-- 
+      Using esm.sh/run which is a specialized loader for running TSX/TS directly in the browser.
+      It uses fetch() to read files, which bypasses GitHub Pages' MIME-type strictness.
+    -->
     <script type="module" src="https://esm.sh/run" data-main="./index.tsx"></script>
 </body>
 </html>

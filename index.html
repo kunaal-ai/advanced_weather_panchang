@@ -41,6 +41,24 @@
                 },
             },
         }
+
+        // Global error handler for diagnostic overlay if the app fails to boot
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+            const root = document.getElementById('root');
+            if (root && (root.innerHTML.includes('fallback-loader') || root.innerHTML.trim() === "")) {
+                root.innerHTML = `
+                    <div style="padding: 40px; color: #ff4d4d; font-family: 'Inter', sans-serif; background: #0a0e17; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+                        <span class="material-symbols-outlined" style="font-size: 48px; margin-bottom: 20px;">error</span>
+                        <h1 style="font-size: 24px; margin-bottom: 10px; color: white;">Aether Boot Failure</h1>
+                        <p style="opacity: 0.7; max-width: 600px; line-height: 1.6;">${msg}</p>
+                        <p style="font-size: 12px; opacity: 0.4; margin-top: 20px;">File: ${url}<br>Line: ${lineNo}, Column: ${columnNo}</p>
+                        <pre style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; margin-top: 30px; text-align: left; max-width: 90%; overflow: auto; font-size: 11px;">${error?.stack || 'No extended trace available'}</pre>
+                        <button onclick="window.location.reload()" style="margin-top: 30px; padding: 12px 24px; background: #135bec; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Retry System Initialization</button>
+                    </div>
+                `;
+            }
+            return false;
+        };
     </script>
     <style>
         :root {

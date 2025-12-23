@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { WeatherData, HourlyForecast } from '../types.ts';
+import { WeatherData, HourlyForecast } from '../types';
 
 interface WeatherHeroProps {
   weather: WeatherData;

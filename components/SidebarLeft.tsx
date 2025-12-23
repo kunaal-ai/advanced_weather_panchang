@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { WeatherData, ForecastDay, WeatherInsight } from '../types.ts';
+import { WeatherData, ForecastDay, WeatherInsight } from '../types';
 
 interface SidebarLeftProps {
   weather: WeatherData;

@@ -1,17 +1,17 @@
 
 import React, { useState, useEffect } from 'react';
-import { SidebarLeft } from './components/SidebarLeft.tsx';
-import { WeatherHero } from './components/WeatherHero.tsx';
-import { SidebarRight } from './components/SidebarRight.tsx';
+import { SidebarLeft } from './components/SidebarLeft';
+import { WeatherHero } from './components/WeatherHero';
+import { SidebarRight } from './components/SidebarRight';
 import { 
   INITIAL_WEATHER, 
   MOCK_FORECAST, 
   MOCK_HOURLY, 
   MOCK_PANCHANG, 
   INITIAL_INSIGHT 
-} from './constants.tsx';
-import { WeatherData, ForecastDay, HourlyForecast, PanchangData, WeatherInsight } from './types.ts';
-import { getGeminiWeatherInsight, searchWeatherForCity, searchWeatherByCoords } from './services/geminiService.ts';
+} from './constants';
+import { WeatherData, ForecastDay, HourlyForecast, PanchangData, WeatherInsight } from './types';
+import { getGeminiWeatherInsight, searchWeatherForCity, searchWeatherByCoords } from './services/geminiService';
 
 const App: React.FC = () => {
   const [weather, setWeather] = useState<WeatherData>(INITIAL_WEATHER);
@@ -35,14 +35,13 @@ const App: React.FC = () => {
         const geminiInsight = await getGeminiWeatherInsight(INITIAL_WEATHER.condition);
         setInsight(geminiInsight);
       } catch (err) {
-        console.error(err);
+        console.error("Fetch Data Error:", err);
       } finally {
         setIsLoading(false);
       }
     };
     fetchData();
 
-    // Handle PWA Install Prompt
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);

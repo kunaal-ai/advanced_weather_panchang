@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { PanchangData } from '../types.ts';
+import { PanchangData } from '../types';
 
 interface SidebarRightProps {
   panchang: PanchangData;
@@ -134,7 +134,7 @@ export const SidebarRight: React.FC<SidebarRightProps> = ({ panchang }) => {
             </div>
           )}
 
-          {/* Festival Alert - Redesigned */}
+          {/* Festival Alert */}
           <div className="bg-gradient-to-r from-red-600/20 to-transparent border border-red-500/20 rounded-[1.5rem] p-5 flex items-center gap-5 mt-auto hover:from-red-600/30 transition-all group shrink-0 shadow-2xl">
             <div className="p-3 rounded-2xl bg-red-500/20 text-red-400 group-hover:scale-110 transition-all border border-red-500/20">
               <span className="material-symbols-outlined text-2xl">auto_awesome_motion</span>

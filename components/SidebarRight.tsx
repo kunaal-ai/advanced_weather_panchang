@@ -21,99 +21,101 @@ export const SidebarRight: React.FC<SidebarRightProps> = ({ panchang }) => {
   return (
     <div className="flex flex-col gap-6 h-full lg:overflow-hidden">
       {/* Panchang Events Card */}
-      <div className="flex-[1.5] glass-panel rounded-[2.5rem] p-5 flex flex-col min-h-[450px] lg:min-h-0 relative overflow-hidden">
-        {/* Top Info Strip */}
-        <div className="flex items-center justify-between mb-4 relative z-10 shrink-0">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-panchang-accent/10 rounded-lg border border-panchang-accent/20">
-              <span className="material-symbols-outlined text-panchang-accent text-base">temple_hindu</span>
+      <div className="flex-[1.4] glass-panel rounded-[3rem] p-6 flex flex-col min-h-[400px] lg:min-h-0 relative overflow-hidden">
+        <div className="flex items-center justify-between mb-5 relative z-10 shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-panchang-accent/10 rounded-xl border border-panchang-accent/20">
+              <span className="material-symbols-outlined text-panchang-accent text-xl">temple_hindu</span>
             </div>
             <div>
-              <p className="text-[10px] text-[var(--text-color)] font-bold tracking-tight uppercase leading-none">Lunar Phase</p>
+              <p className="text-[9px] text-[var(--text-muted)] font-black uppercase tracking-widest leading-none mb-1">Cycle</p>
+              <p className="text-[13px] font-black text-[var(--text-color)] uppercase italic leading-none">{panchang?.tithi || 'Checking...'}</p>
             </div>
           </div>
           <div className="flex flex-col items-end">
-             <p className="text-[10px] font-black text-[var(--text-color)] leading-none mb-0.5">{panchang.tithi || '---'}</p>
-             <p className="text-[7px] font-bold text-panchang-accent uppercase tracking-tighter opacity-70">{panchang.paksha || '---'}</p>
+             <div className="px-2 py-1 rounded-md bg-panchang-accent/10 border border-panchang-accent/20">
+                <p className="text-[9px] font-black text-panchang-accent uppercase tracking-tighter">{panchang?.paksha || 'Syncing'}</p>
+             </div>
           </div>
         </div>
 
-        {/* Sunrise/Sunset Mini Row */}
-        <div className="grid grid-cols-2 gap-2 mb-4 shrink-0">
-          <div className="glass-card rounded-xl px-3 py-2 flex items-center justify-between border border-[var(--glass-border)]">
-            <span className="material-symbols-outlined text-yellow-500/50 text-sm">light_mode</span>
+        <div className="grid grid-cols-2 gap-3 mb-6 shrink-0">
+          <div className="glass-card rounded-2xl p-3.5 flex items-center justify-between border border-white/5">
+            <span className="material-symbols-outlined text-yellow-500/40 text-lg">light_mode</span>
             <div className="text-right">
-              <p className="text-[6px] text-[var(--text-muted)] uppercase font-black leading-none mb-0.5">Sunrise</p>
-              <p className="text-[var(--text-color)] text-[10px] font-bold leading-none">{panchang.sunrise || '--:--'}</p>
+              <p className="text-[7px] text-[var(--text-muted)] uppercase font-black leading-none mb-1">Sunrise</p>
+              <p className="text-[var(--text-color)] text-xs font-black leading-none">{panchang?.sunrise || '--:--'}</p>
             </div>
           </div>
-          <div className="glass-card rounded-xl px-3 py-2 flex items-center justify-between border border-[var(--glass-border)]">
-            <span className="material-symbols-outlined text-orange-500/50 text-sm">bedtime</span>
+          <div className="glass-card rounded-2xl p-3.5 flex items-center justify-between border border-white/5">
+            <span className="material-symbols-outlined text-orange-500/40 text-lg">bedtime</span>
             <div className="text-right">
-              <p className="text-[6px] text-[var(--text-muted)] uppercase font-black leading-none mb-0.5">Sunset</p>
-              <p className="text-[var(--text-color)] text-[10px] font-bold leading-none">{panchang.sunset || '--:--'}</p>
+              <p className="text-[7px] text-[var(--text-muted)] uppercase font-black leading-none mb-1">Sunset</p>
+              <p className="text-[var(--text-color)] text-xs font-black leading-none">{panchang?.sunset || '--:--'}</p>
             </div>
           </div>
         </div>
 
-        {/* 7-Day Events List */}
-        <div className="flex-1 overflow-y-auto pr-1 space-y-2 custom-scrollbar min-h-0">
-          <p className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] mb-2 sticky top-0 bg-[var(--glass-bg)] backdrop-blur py-2 z-10 border-b border-[var(--glass-border)]">
-            Next 7 Days
-          </p>
-          <div className="space-y-2">
-            {(panchang.upcomingEvents || []).map((event, idx) => (
-              <div key={idx} className="flex items-center gap-3 p-3 glass-card rounded-xl border border-white/5 hover:border-panchang-accent/30 transition-all group cursor-default">
-                <div className="text-center min-w-[36px] shrink-0">
-                   <p className="text-[9px] font-black text-panchang-accent leading-none uppercase">{event.date?.split(' ')[0]}</p>
-                   <p className="text-xs font-black text-[var(--text-color)] leading-none mt-1">{event.date?.split(' ')[1]}</p>
+        <div className="flex-1 overflow-y-auto pr-1 space-y-2.5 custom-scrollbar min-h-0">
+          <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] mb-3 sticky top-0 bg-[var(--glass-bg)] backdrop-blur py-1 z-10 border-b border-white/10">Vedic Calendar</p>
+          {(panchang?.upcomingEvents || []).map((event, idx) => {
+            const dateStr = event.date || 'MMM 00';
+            const spaceIdx = dateStr.indexOf(' ');
+            const month = spaceIdx !== -1 ? dateStr.substring(0, spaceIdx) : dateStr;
+            const day = spaceIdx !== -1 ? dateStr.substring(spaceIdx + 1) : '';
+
+            return (
+              <div key={idx} className="flex items-center gap-4 p-3.5 glass-card rounded-2xl border border-white/5 hover:border-panchang-accent/30 transition-all group">
+                <div className="text-center min-w-[40px] shrink-0">
+                   <p className="text-[10px] font-black text-[var(--text-color)] leading-none uppercase">{month}</p>
+                   <p className="text-sm font-black text-panchang-accent leading-none mt-1.5">{day}</p>
                 </div>
                 <div className="flex-1 min-w-0">
-                   <p className="text-xs font-bold text-[var(--text-color)] truncate group-hover:text-panchang-accent transition-colors">{event.name}</p>
-                   <div className={`inline-block px-1.5 py-0.5 rounded-md border text-[7px] font-black uppercase mt-1 ${getEventTypeColor(event.type)}`}>
+                   <p className="text-xs font-black text-[var(--text-color)] truncate uppercase tracking-tight mb-1">{event.name}</p>
+                   <div className={`inline-block px-1.5 py-0.5 rounded-md border text-[8px] font-black uppercase ${getEventTypeColor(event.type)}`}>
                      {event.type}
                    </div>
                 </div>
               </div>
-            ))}
-            {(panchang.upcomingEvents || []).length === 0 && (
-              <p className="text-[10px] text-[var(--text-muted)] text-center py-4 italic">No major events found.</p>
-            )}
-          </div>
+            );
+          })}
         </div>
       </div>
 
-      {/* Daily Rashifal Card */}
-      <div className="flex-1 glass-panel rounded-[2.5rem] p-6 flex flex-col min-h-[400px] lg:min-h-0 overflow-hidden relative">
-        <div className="flex items-center justify-between mb-5 relative z-10 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-xl border border-primary/20">
-              <span className="material-symbols-outlined text-primary text-xl">star</span>
-            </div>
-            <div>
-              <h3 className="text-[var(--text-color)] font-bold text-sm tracking-tight uppercase italic leading-none">Daily Rashifal</h3>
-            </div>
+      <div className="flex-1 glass-panel rounded-[3rem] p-6 flex flex-col min-h-[350px] lg:min-h-0 overflow-hidden relative">
+        <div className="flex items-center gap-3 mb-5 shrink-0">
+          <div className="p-2 bg-primary/10 rounded-xl border border-primary/20">
+            <span className="material-symbols-outlined text-primary text-xl">star</span>
+          </div>
+          <div>
+            <h3 className="text-[var(--text-color)] font-black text-sm tracking-tight uppercase italic leading-none">Rashifal</h3>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
-          {(panchang.rashifal || []).map((item, idx) => (
+        <div className="flex-1 overflow-y-auto space-y-3 pr-1 custom-scrollbar min-h-0">
+          {(panchang?.rashifal || []).map((item, idx) => (
             <div 
               key={idx} 
-              className="glass-card rounded-2xl p-4 flex flex-col gap-2 group transition-all duration-300 hover:bg-primary/5 hover:border-primary/20 border border-transparent cursor-default"
+              className="glass-card rounded-2xl p-4 flex flex-col gap-2 group transition-all duration-300 hover:bg-primary/5 hover:border-primary/20 border border-transparent"
             >
               <div className="flex justify-between items-center">
-                <span className="text-[13px] font-black text-[var(--text-color)] uppercase italic tracking-wide">{item.sign}</span>
-                <div className="flex items-center gap-2">
-                  <span className="size-1.5 rounded-full shadow-sm" style={{ background: (item.luckyColor || 'gray').toLowerCase() }}></span>
-                  <span className="text-[9px] text-[var(--text-muted)] font-black uppercase opacity-70">Luck: {item.luckyNumber || '-'}</span>
+                <span className="text-xs font-black text-[var(--text-color)] uppercase italic tracking-wider">{item.sign}</span>
+                <div className="flex items-center gap-2 px-2 py-0.5 rounded-lg bg-white/5">
+                  <span className="size-1.5 rounded-full" style={{ background: (item.luckyColor || 'gray').toLowerCase() }}></span>
+                  <span className="text-[8px] text-[var(--text-muted)] font-black uppercase tracking-tighter">Luck {item.luckyNumber || '-'}</span>
                 </div>
               </div>
-              <p className="text-[11px] text-[var(--text-color)] leading-relaxed opacity-80 group-hover:opacity-100 transition-opacity">
+              <p className="text-[10.5px] text-[var(--text-color)] leading-relaxed font-medium opacity-80 group-hover:opacity-100 transition-opacity line-clamp-3">
                 {item.prediction}
               </p>
             </div>
           ))}
+          {(!panchang?.rashifal || panchang.rashifal.length === 0) && (
+             <div className="flex flex-col items-center justify-center py-20 gap-3 opacity-20">
+                <span className="material-symbols-outlined text-4xl animate-pulse">searching_hands</span>
+                <p className="text-[9px] font-black uppercase tracking-widest">Consulting the Stars...</p>
+             </div>
+          )}
         </div>
       </div>
     </div>

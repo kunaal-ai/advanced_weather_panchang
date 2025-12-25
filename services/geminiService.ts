@@ -1,201 +1,171 @@
 
-import { GoogleGenAI, Type } from "@google/genai";
-import { WeatherInsight, SearchResult, GroundingSource, PanchangData } from "../types";
+import { GoogleGenAI } from "@google/genai";
+import { WeatherInsight, SearchResult, PanchangData, WeatherData, ForecastDay, HourlyForecast } from "../types";
+import { INITIAL_WEATHER, MOCK_PANCHANG, INITIAL_INSIGHT, MOCK_FORECAST, MOCK_HOURLY } from "../constants";
 
-const aiInstance = () => {
-  const key = (typeof process !== 'undefined' && process.env && process.env.API_KEY) || '';
-  if (!key) {
-    console.warn("Gemini API Key missing.");
+/**
+ * Access the OpenWeatherMap API key from environment variables.
+ * In Netlify, ensure you have set WEATHER_API_KEY in the Environment Variables settings.
+ */
+const WEATHER_API_KEY = process.env.WEATHER_API_KEY;
+
+/**
+ * Robust JSON extraction to handle model artifacts and markdown blocks
+ */
+function extractJson(text: string) {
+  if (!text) return null;
+  try {
+    let clean = text.replace(/```json|```|'''json|'''/gi, '').trim();
+    const startIdx = clean.indexOf('{');
+    const endIdx = clean.lastIndexOf('}');
+    if (startIdx !== -1 && endIdx !== -1) {
+      clean = clean.substring(startIdx, endIdx + 1);
+    }
+    return JSON.parse(clean);
+  } catch (e) {
+    console.warn("JSON Extraction Failed:", e);
     return null;
   }
-  return new GoogleGenAI({ apiKey: key });
-};
+}
 
-const toTitleCase = (str: string): string => {
-  return str.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-};
-
-const sanitizeIcon = (icon: string): string => {
-  const map: Record<string, string> = {
-    'partly_sunimage': 'partly_cloudy_day',
-    'partly_sunny': 'partly_cloudy_day',
-    'partly_cloudy': 'partly_cloudy_day',
-    'heavy_rain_image': 'rainy',
-    'storm_icon': 'thunderstorm',
-    'clear_night_icon': 'bedtime',
-    'mostly_sunny': 'sunny',
-    'mostly_cloudy': 'cloud',
-    'scattered_showers': 'rainy_light',
-    'light_rain': 'rainy_light',
-    'rain': 'rainy',
-    'sunny': 'sunny',
-    'clear': 'sunny',
-    'cloudy': 'cloud',
-    'overcast': 'cloud',
-    'storm': 'thunderstorm'
-  };
-  const normalized = (icon || '').toLowerCase().trim().replace(/\s+/g, '_');
-  if (map[normalized]) return map[normalized];
-  if (normalized.includes('sun')) return 'sunny';
-  if (normalized.includes('rain')) return 'rainy';
-  if (normalized.includes('cloud')) return 'cloud';
-  if (normalized.includes('storm')) return 'thunderstorm';
-  if (normalized.includes('clear')) return 'sunny';
-  return 'cloud';
-};
-
-const ensureNumber = (val: any, fallback: number = 0): number => {
-  if (typeof val === 'number') return isNaN(val) ? fallback : val;
-  if (typeof val === 'string') {
-    const parsed = parseFloat(val.replace(/[^0-9.-]/g, ''));
-    return isNaN(parsed) ? fallback : parsed;
+/**
+ * Fallback to OpenWeatherMap if Gemini is exhausted or if no Gemini Key is provided.
+ * Uses the WEATHER_API_KEY environment variable.
+ */
+async function fetchFallbackWeather(query: string): Promise<SearchResult | null> {
+  if (!WEATHER_API_KEY) {
+    console.error("OpenWeatherMap API Key is missing. Please set WEATHER_API_KEY in your environment.");
+    return null;
   }
-  return fallback;
+
+  try {
+    // Current Weather
+    const weatherRes = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(query)}&appid=${WEATHER_API_KEY}&units=imperial`);
+    // 5-day / 3-hour Forecast
+    const forecastRes = await fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${encodeURIComponent(query)}&appid=${WEATHER_API_KEY}&units=imperial`);
+    
+    if (!weatherRes.ok) return null;
+    
+    const wData = await weatherRes.json();
+    const fData = await forecastRes.json();
+    
+    const now = new Date();
+    
+    const weather: WeatherData = {
+      temp: Math.round(wData.main.temp),
+      feelsLike: Math.round(wData.main.feels_like),
+      condition: wData.weather[0].main,
+      wind: `${Math.round(wData.wind.speed)} mph`,
+      location: `${wData.name}, ${wData.sys.country}`,
+      icon: mapConditionToIcon(wData.weather[0].main),
+      date: now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' }),
+      time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+
+    // Simple transformation of 3-hour chunks to daily view
+    const dailyMap: any = {};
+    fData.list.forEach((item: any) => {
+      const date = item.dt_txt.split(' ')[0];
+      if (!dailyMap[date]) {
+        dailyMap[date] = { high: item.main.temp_max, low: item.main.temp_min, condition: item.weather[0].main };
+      } else {
+        dailyMap[date].high = Math.max(dailyMap[date].high, item.main.temp_max);
+        dailyMap[date].low = Math.min(dailyMap[date].low, item.main.temp_min);
+      }
+    });
+
+    const forecast: ForecastDay[] = Object.keys(dailyMap).slice(0, 7).map(date => {
+      const d = new Date(date);
+      return {
+        day: d.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase(),
+        high: Math.round(dailyMap[date].high),
+        low: Math.round(dailyMap[date].low),
+        condition: dailyMap[date].condition,
+        icon: mapConditionToIcon(dailyMap[date].condition)
+      };
+    });
+
+    const hourly: HourlyForecast[] = fData.list.slice(0, 6).map((item: any) => ({
+      time: new Date(item.dt * 1000).toLocaleTimeString([], { hour: 'numeric' }),
+      temp: Math.round(item.main.temp),
+      icon: mapConditionToIcon(item.weather[0].main)
+    }));
+
+    return {
+      weather,
+      forecast,
+      hourly,
+      panchang: MOCK_PANCHANG, // Fallback to mock for Vedic data
+      insight: INITIAL_INSIGHT
+    };
+  } catch (e) {
+    console.error("OpenWeatherMap fallback failed:", e);
+    return null;
+  }
+}
+
+/**
+ * Maps weather condition strings to Material Symbol names
+ */
+const mapConditionToIcon = (condition: string): string => {
+  if (!condition) return 'sunny';
+  const c = condition.toLowerCase();
+  if (c.includes('thunder') || c.includes('storm')) return 'thunderstorm';
+  if (c.includes('rain') || c.includes('drizzle') || c.includes('showers')) return 'rainy';
+  if (c.includes('snow') || c.includes('ice') || c.includes('freezing')) return 'cloudy_snowing';
+  if (c.includes('fog') || c.includes('mist') || c.includes('haze')) return 'foggy';
+  if (c.includes('partly') && c.includes('cloud')) return 'partly_cloudy_day';
+  if (c.includes('cloud')) return 'cloud';
+  if (c.includes('clear') || c.includes('sunny')) return 'sunny';
+  if (c.includes('wind') || c.includes('breezy')) return 'air';
+  return 'filter_drama';
 };
 
 export const getCitySuggestions = async (query: string): Promise<string[]> => {
-  if (query.length < 2) return [];
-  const ai = aiInstance();
-  if (!ai) return [];
+  if (!query || query.length < 2) return [];
+  const key = process.env.API_KEY;
+  if (!key) return [];
+  
   try {
+    const ai = new GoogleGenAI({ apiKey: key });
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: `List up to 5 real-world cities matching "${query}". Return ONLY a JSON array of strings: ["City, Country"].`,
-      config: {
-        responseMimeType: "application/json",
-      },
+      contents: `Search for 5 major world cities starting with "${query}". Return ONLY a JSON array of strings: ["City, Country"].`,
     });
-    if (!response.text) return [];
-    const parsed = JSON.parse(response.text.trim());
-    return Array.isArray(parsed) ? parsed : [];
-  } catch (error) {
+    const data = extractJson(response.text);
+    return Array.isArray(data) ? data : [];
+  } catch (e) {
     return [];
   }
 };
 
-export const getGeminiWeatherInsight = async (condition: string): Promise<WeatherInsight> => {
-  const ai = aiInstance();
-  if (!ai) return { quote: "Perform your prescribed duties, for action is better than inaction.", meaning: "3.8" };
-  try {
-    const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: `Provide exactly ONE meaningful English insight/quote from the Bhagavad Gita relevant to ${condition} weather. Do NOT include the Sanskrit shloka, only the English translation. Return ONLY JSON: {"quote": "The English insight text", "meaning": "9.19"}.`,
-      config: {
-        responseMimeType: "application/json",
-      },
-    });
-    if (!response.text) return { quote: "Perform your duty.", meaning: "3.8" };
-    const parsed = JSON.parse(response.text.trim());
-    return {
-      quote: (parsed.quote || "Perform your duty.").split('\n')[0].trim(),
-      meaning: parsed.meaning || "3.8"
-    };
-  } catch (error) {
-    return { quote: "Rise through the efforts of your own mind.", meaning: "6.5" };
-  }
-};
-
-const processGeminiResponse = (response: any): SearchResult | null => {
-  const text = response.text || "";
-  const firstBrace = text.indexOf('{');
-  const lastBrace = text.lastIndexOf('}');
+export const searchWeatherForCity = async (query: string): Promise<SearchResult | null> => {
+  if (!query) return null;
+  const key = process.env.API_KEY;
   
-  if (firstBrace === -1 || lastBrace === -1 || lastBrace < firstBrace) {
-    console.error("No valid JSON found in response");
-    return null;
+  // If no Gemini key, use OWM immediately
+  if (!key) {
+    return fetchFallbackWeather(query);
   }
 
-  const jsonString = text.substring(firstBrace, lastBrace + 1);
-
   try {
-    const rawData = JSON.parse(jsonString);
-    if (!rawData || typeof rawData !== 'object') return null;
-
-    const sources: GroundingSource[] = [];
-    const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
-    if (chunks && Array.isArray(chunks)) {
-      chunks.forEach((chunk: any) => {
-        if (chunk.web) sources.push({ title: chunk.web.title, uri: chunk.web.uri });
-      });
-    }
-
-    const now = new Date();
+    const ai = new GoogleGenAI({ apiKey: key });
     
-    // Process Weather
-    const weather = {
-      temp: ensureNumber(rawData.weather?.temp, 72),
-      feelsLike: ensureNumber(rawData.weather?.feelsLike, 70),
-      condition: toTitleCase(rawData.weather?.condition || "Clear"),
-      wind: rawData.weather?.wind || "5 mph",
-      location: rawData.weather?.location || "Unknown",
-      icon: sanitizeIcon(rawData.weather?.icon || rawData.weather?.condition || "sunny"),
-      date: now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' }),
-      time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      sources
-    };
-
-    // Process Forecast
-    const forecast = (Array.isArray(rawData.forecast) ? rawData.forecast : []).map((f: any) => ({
-      day: f.day || "Day",
-      icon: sanitizeIcon(f.icon || f.condition || "cloud"),
-      high: ensureNumber(f.high, 75),
-      low: ensureNumber(f.low, 60),
-      condition: toTitleCase(f.condition || "Cloudy")
-    }));
-
-    // Process Hourly
-    const hourly = (Array.isArray(rawData.hourly) ? rawData.hourly : []).map((h: any) => ({
-      time: h.time || "--",
-      icon: sanitizeIcon(h.icon || "cloud"),
-      temp: ensureNumber(h.temp, 70)
-    }));
-
-    // Process Panchang
-    const panchang: PanchangData = {
-      tithi: rawData.panchang?.tithi || "N/A",
-      paksha: rawData.panchang?.paksha || "N/A",
-      sunrise: rawData.panchang?.sunrise || "--:-- AM",
-      sunset: rawData.panchang?.sunset || "--:-- PM",
-      upcomingEvents: (Array.isArray(rawData.panchang?.upcomingEvents) ? rawData.panchang.upcomingEvents : []).slice(0, 7),
-      rashifal: Array.isArray(rawData.panchang?.rashifal) ? rawData.panchang.rashifal : []
-    };
-
-    // Process Insight
-    const rawInsight = rawData.insight || {};
-    const insight = {
-      quote: (rawInsight.quote || "Perform your duty.").split('\n')[0].trim(),
-      meaning: rawInsight.meaning || "2.47"
-    };
-
-    return { weather, forecast, hourly, panchang, insight };
-  } catch (e) {
-    console.error("Critical Parse Error in jsonString:", jsonString, e);
-    return null;
-  }
-};
-
-export const searchWeatherForCity = async (city: string): Promise<SearchResult | null> => {
-  const ai = aiInstance();
-  if (!ai) return null;
-  try {
-    const prompt = `SEARCH FOR CURRENT REAL-TIME WEATHER FOR "${city}" RIGHT NOW. 
-    USE GOOGLE SEARCH TO VERIFY THE ABSOLUTE LATEST TEMPERATURE IN FAHRENHEIT.
-    DANGER: IF YOU FIND CELSIUS, CONVERT IT TO FAHRENHEIT. DO NOT BE WRONG.
-    EXAMPLE: IF IT IS 44°F, DO NOT REPORT IT AS 34°F. BE PRECISE.
-    
-    Also provide full Vedic Panchang including exactly 7 upcoming Hindu festivals/events.
-    
-    STRICT JSON OUTPUT ONLY:
+    const prompt = `Perform a Google Search for LIVE weather and Vedic Panchang for "${query}". 
+    Units: Fahrenheit.
+    Strictly return ONLY JSON in this structure:
     {
-      "weather": { "temp": number, "condition": "Title Case string", "feelsLike": number, "wind": "10 mph", "location": "City Name", "icon": "sunny" },
-      "forecast": [ { "day": "Mon", "icon": "sunny", "high": number, "low": number, "condition": "Sunny" } ],
-      "hourly": [ { "time": "12 PM", "icon": "cloudy", "temp": number } ],
+      "weather": { "temp": number, "feelsLike": number, "condition": "string", "wind": "string", "location": "string" },
+      "forecast": [ { "day": "3-LETTER-ABBREVIATION", "high": number, "low": number, "condition": "string" } ],
+      "hourly": [ { "time": "string", "temp": number, "condition": "string" } ],
       "panchang": { 
-        "tithi": string, "paksha": string, "sunrise": string, "sunset": string, 
-        "upcomingEvents": [ { "date": "Oct 15", "name": "Festival Name", "type": "Festival" } ],
-        "rashifal": [ { "sign": "Aries", "prediction": "text", "luckyNumber": "7", "luckyColor": "Red" } ]
-      },
-      "insight": { "quote": "EXACTLY ONE meaningful English insight/quote from the Bhagavad Gita", "meaning": "9.19" }
+        "tithi": "string", 
+        "paksha": "string", 
+        "sunrise": "string", 
+        "sunset": "string", 
+        "upcomingEvents": [{"date": "MMM DD", "name": "string", "type": "string"}],
+        "rashifal": [{"sign": "string", "prediction": "string", "luckyNumber": "string", "luckyColor": "string"}] 
+      }
     }`;
 
     const response = await ai.models.generateContent({
@@ -203,28 +173,64 @@ export const searchWeatherForCity = async (city: string): Promise<SearchResult |
       contents: prompt,
       config: { tools: [{ googleSearch: {} }] },
     });
-    return processGeminiResponse(response);
-  } catch (error) {
-    console.error("Search API Error:", error);
-    return null;
+
+    const raw = extractJson(response.text);
+    if (!raw) throw new Error("Empty AI Response");
+
+    const now = new Date();
+    
+    const hasRashifal = raw.panchang?.rashifal && Array.isArray(raw.panchang.rashifal) && raw.panchang.rashifal.length > 0;
+    const hasEvents = raw.panchang?.upcomingEvents && Array.isArray(raw.panchang.upcomingEvents) && raw.panchang.upcomingEvents.length > 0;
+
+    return {
+      weather: {
+        temp: raw.weather?.temp ?? INITIAL_WEATHER.temp,
+        feelsLike: raw.weather?.feelsLike ?? INITIAL_WEATHER.feelsLike,
+        condition: raw.weather?.condition ?? INITIAL_WEATHER.condition,
+        wind: raw.weather?.wind ?? INITIAL_WEATHER.wind,
+        location: raw.weather?.location || query,
+        icon: mapConditionToIcon(raw.weather?.condition),
+        date: now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' }),
+        time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      },
+      forecast: (raw.forecast && Array.isArray(raw.forecast) ? raw.forecast : MOCK_FORECAST).map((f: any) => ({
+        day: (f.day || "DAY").substring(0, 3).toUpperCase(),
+        high: f.high ?? 70,
+        low: f.low ?? 60,
+        condition: f.condition || "Cloudy",
+        icon: mapConditionToIcon(f.condition)
+      })).slice(0, 7),
+      hourly: (raw.hourly && Array.isArray(raw.hourly) ? raw.hourly : MOCK_HOURLY).map((h: any) => ({
+        time: h.time || "---",
+        temp: h.temp ?? 70,
+        icon: mapConditionToIcon(h.condition)
+      })),
+      panchang: {
+        tithi: raw.panchang?.tithi || MOCK_PANCHANG.tithi,
+        paksha: raw.panchang?.paksha || MOCK_PANCHANG.paksha,
+        sunrise: raw.panchang?.sunrise || MOCK_PANCHANG.sunrise,
+        sunset: raw.panchang?.sunset || MOCK_PANCHANG.sunset,
+        upcomingEvents: hasEvents ? raw.panchang.upcomingEvents : MOCK_PANCHANG.upcomingEvents,
+        rashifal: hasRashifal ? raw.panchang.rashifal : MOCK_PANCHANG.rashifal
+      },
+      insight: INITIAL_INSIGHT
+    };
+  } catch (e: any) {
+    console.error("Gemini failed, switching to OWM fallback:", e);
+    return fetchFallbackWeather(query);
   }
 };
 
 export const searchWeatherByCoords = async (lat: number, lon: number): Promise<SearchResult | null> => {
-  const ai = aiInstance();
-  if (!ai) return null;
+  if (!WEATHER_API_KEY) return null;
   try {
-    const prompt = `SEARCH WEATHER AND PANCHANG for coords ${lat}, ${lon}. 
-    Use Google Search for CURRENT accurate real-time Fahrenheit temperature. 
-    Convert all Celsius values to Fahrenheit. Return 7 upcoming Hindu festivals.
-    JSON same as city search. Return meaningful English Gita quotes only.`;
-    const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: prompt,
-      config: { tools: [{ googleSearch: {} }] },
-    });
-    return processGeminiResponse(response);
-  } catch (error) {
-    return null;
+    const weatherRes = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${WEATHER_API_KEY}&units=imperial`);
+    if (weatherRes.ok) {
+        const wData = await weatherRes.json();
+        return searchWeatherForCity(wData.name);
+    }
+  } catch (e) {
+    console.error("Coords sync failed:", e);
   }
+  return null;
 };

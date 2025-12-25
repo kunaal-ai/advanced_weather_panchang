@@ -5,20 +5,19 @@
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
     <meta name="theme-color" content="#101622">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Aether Weather & Panchang</title>
     
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="https://lh3.googleusercontent.com/aida-public/AB6AXuAYuSUsiv3b3YXKjnKr-H_aaJd29W7yCKpIqfDTC7QkHU8_YtFqYOZDWLt-C6CsXlAJ6jn1357L-CuTCfvp-8dv4X0YxusF0je1YfEeQYrvJXzC-ucED_bzWL2M1BZP7UswxMQ3YejPCJ3x1wpvhDHWeEvE_3wakZRXkEYC2os8tlHaLnSAYxauiwp68isu3zZYwDAzpkZy_zPGAbhWUbJmKA7opy_QLm54g7o5Z3iuxylA12p6xfVxbEKJDF_DIr26LTv5IRScww">
+    <link rel="icon" type="image/png" href="https://lh3.googleusercontent.com/aida-public/AB6AXuAYuSUsiv3b3YXKjnKr-H_aaJd29W7yCKpIqfDTC7QkHU8_YtFqYOZDWLt-C6CsXlAJ6jn1357L-CuTCfvp-8dv4X0YxusF0je1YfEeQYrvJXzC-ucED_bzWL2M1BZP7UswxMQ3YejPCJ3x1wpvhDHWeEvE_3wakZRXkEYC2os8tlHaLnSAYxauiwp68isu3zZYwDAzpkZy_zPGAbhWUbJmKA7opy_QLm54g7o5Z3iuxylA12p6xfVxbEKJDF_DIr26LTv5IRScww">
+
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
     
     <script>
-        // Direct assignment to avoid proxy issues in different environments
-        window.process = { 
-            env: { 
-                API_KEY: "" // Will be overwritten by build system if provided
-            } 
-        };
-        
         window.tailwind.config = {
             darkMode: 'class',
             theme: {
@@ -31,10 +30,6 @@
                     fontFamily: { sans: ['Inter', 'sans-serif'] },
                 }
             }
-        };
-
-        window.onerror = function(msg) {
-            console.error("Critical:", msg);
         };
     </script>
     
@@ -97,11 +92,23 @@
             -webkit-font-smoothing: antialiased;
         }
 
-        .boot-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: white; background: #101622; position: fixed; inset: 0; z-index: 9999; }
-        .loader-ring { width: 32px; height: 32px; border: 2px solid rgba(255,255,255,0.05); border-top-color: #135bec; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 24px; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .boot-label { font-size: 10px; letter-spacing: 0.8em; text-transform: uppercase; font-weight: 900; opacity: 0.2; }
-        
+        .material-symbols-outlined {
+            font-family: 'Material Symbols Outlined';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
+            font-display: block;
+        }
+
         .glass-panel { 
             background: var(--glass-bg); 
             backdrop-filter: blur(24px); 
@@ -113,8 +120,7 @@
             border: 1px solid var(--card-border); 
         }
 
-        .text-glow { text-shadow: 0 0 20px rgba(255, 255, 255, 0.1); }
-        .custom-scrollbar::-webkit-scrollbar { width: 2px; }
+        .custom-scrollbar::-webkit-scrollbar { width: 3px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 10px; }
     </style>
 <script type="importmap">
@@ -131,11 +137,21 @@
 </script>
 </head>
 <body>
-    <div id="boot-screen" class="boot-screen">
-        <div class="loader-ring"></div>
-        <div class="boot-label">Aether Synchronizing</div>
-    </div>
     <div id="root"></div>
     <script type="module" src="https://esm.sh/run" data-main="./index.tsx"></script>
+    <script>
+      // Using standard relative path for maximum compatibility across environments
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('sw.js')
+            .then(registration => {
+              console.log('ServiceWorker registration successful with scope: ', registration.scope);
+            })
+            .catch(error => {
+              console.warn('ServiceWorker registration failed: ', error);
+            });
+        });
+      }
+    </script>
 </body>
 </html>

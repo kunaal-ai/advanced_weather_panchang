@@ -12,6 +12,59 @@ export const INITIAL_WEATHER: WeatherData = {
   time: "10:23 AM"
 };
 
+export const GITA_QUOTES: WeatherInsight[] = [
+  {
+    quote: "You have a right to perform your prescribed duties, but you are not entitled to the fruits of your actions.",
+    meaning: "Bhagavad Gita 2.47"
+  },
+  {
+    quote: "Man is made by his belief. As he believes, so he is.",
+    meaning: "Bhagavad Gita 17.3"
+  },
+  {
+    quote: "The soul is neither born, nor does it ever die.",
+    meaning: "Bhagavad Gita 2.20"
+  },
+  {
+    quote: "Change is the law of the universe. You can be a millionaire, or a pauper in a moment.",
+    meaning: "Bhagavad Gita 2.12"
+  },
+  {
+    quote: "One who has control over the mind is tranquil in heat and cold, in pleasure and pain, and in honor and dishonor.",
+    meaning: "Bhagavad Gita 6.7"
+  },
+  {
+    quote: "A person can rise through the efforts of his own mind; or draw himself down, in the same manner. Because each person is his own friend or enemy.",
+    meaning: "Bhagavad Gita 6.5"
+  },
+  {
+    quote: "Hell has three gates: lust, anger and greed.",
+    meaning: "Bhagavad Gita 16.21"
+  },
+  {
+    quote: "Perform your obligatory duty, for action is indeed better than inaction.",
+    meaning: "Bhagavad Gita 3.8"
+  },
+  {
+    quote: "Whatever action a great man performs, common men follow.",
+    meaning: "Bhagavad Gita 3.21"
+  },
+  {
+    quote: "There is neither this world, nor the world beyond, nor happiness for the one who doubts.",
+    meaning: "Bhagavad Gita 4.40"
+  },
+  {
+    quote: "Delusion arises from anger. The mind is bewildered by delusion. Reasoning is destroyed when the mind is bewildered.",
+    meaning: "Bhagavad Gita 2.63"
+  },
+  {
+    quote: "The peace of God is with them whose mind and soul are in harmony, who are free from desire and wrath, who know their own soul.",
+    meaning: "Bhagavad Gita 5.26"
+  }
+];
+
+export const INITIAL_INSIGHT = GITA_QUOTES[0];
+
 const MOCK_RASHIFAL: Rashifal[] = [
   { 
     sign: "Mesh (Aries)", 
@@ -90,9 +143,4 @@ export const MOCK_PANCHANG: PanchangData = {
   sunset: "06:12 PM",
   upcomingEvents: MOCK_EVENTS,
   rashifal: MOCK_RASHIFAL
-};
-
-export const INITIAL_INSIGHT: WeatherInsight = {
-  quote: "You have a right to perform your prescribed duties, but you are not entitled to the fruits of your actions.",
-  meaning: "Bhagavad Gita 2.47"
 };

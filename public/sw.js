@@ -1,4 +1,3 @@
-
 const CACHE_NAME = 'aether-cache-v1';
 
 // Minimum required for PWA installability
